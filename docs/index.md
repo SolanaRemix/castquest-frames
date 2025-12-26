@@ -1,17 +1,22 @@
-# CastQuest Protocol Docs
+# CastQuest Documentation
 
-Welcome to the CastQuest protocol documentation.
+Welcome to the CastQuest protocol docs. This space describes how media, frames, mints, quests, the Strategy Worker, and the Smart Brain Runtime Engine work together.
 
-CastQuest is a media‑first automation protocol that turns:
-
-**Media → Templates → Frames → Mints → Quests → Strategy → Onchain**
-
-into a single, operator‑controlled pipeline.
-
-## Sections
+## Navigation
 
 - [Architecture](./architecture.md)
+- [Smart Brain](./smart-brain.md)
 - [Modules](./modules.md)
 - [Flows](./flows.md)
-- [Protocol History](../protocol-history.md)
-- [Contributors](./contributor-cards.md)
+- [Contributor Cards](./contributor-cards.md)
+- [Contributing](./CONTRIBUTING.md)
+
+## What is CastQuest?
+
+CastQuest is a sovereign, media-first protocol that turns:
+
+**Media → Templates → Frames → Render → Mints → Quests → Strategy → Onchain**
+
+into an operator-controlled automation spine.
+
+Use these docs to understand the pipeline, extend the protocol, and build new automation and onchain behaviors.
