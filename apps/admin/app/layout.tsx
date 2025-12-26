@@ -2,32 +2,27 @@ import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata = {
-  title: "CastQuest Admin",
-  description: "Operator dashboard for CastQuest."
+  title: "CastQuest Operator Console",
+  description: "Admin control surface for CastQuest protocol."
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-zinc-950 text-zinc-50">
-        <div className="min-h-screen flex">
-          <aside className="w-60 border-r border-zinc-800 p-4 space-y-4 bg-zinc-950">
-            <div className="flex items-center gap-2 mb-6">
-              <span className="h-3 w-3 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
-              <span className="text-sm font-semibold uppercase tracking-[0.16em]">
-                Operator
-              </span>
-            </div>
-            <nav className="space-y-2 text-sm">
-              <a href="/" className="block text-zinc-300 hover:text-emerald-400">Overview</a>
-              <a href="/quests" className="block text-zinc-300 hover:text-emerald-400">Quests</a>
-              <a href="/frames" className="block text-zinc-300 hover:text-emerald-400">Frames</a>
-              <a href="/mints" className="block text-zinc-300 hover:text-emerald-400">Mints</a>
-              <a href="/brain" className="block text-zinc-300 hover:text-emerald-400">Smart Brain</a>
-              <a href="/systems" className="block text-zinc-300 hover:text-emerald-400">Systems</a>
+      <body className="cq-admin-body">
+        <div className="cq-admin-shell">
+          <aside className="cq-admin-sidebar">
+            <div className="cq-admin-logo">OPERATOR</div>
+            <nav className="cq-admin-nav">
+              <a href="/" className="cq-admin-nav-item">Overview</a>
+              <a href="/quests" className="cq-admin-nav-item">Quests</a>
+              <a href="/frames" className="cq-admin-nav-item">Frames</a>
+              <a href="/mints" className="cq-admin-nav-item">Mints</a>
+              <a href="/brain" className="cq-admin-nav-item">Smart Brain</a>
+              <a href="/systems" className="cq-admin-nav-item">Systems</a>
             </nav>
           </aside>
-          <main className="flex-1 p-6">{children}</main>
+          <main className="cq-admin-main">{children}</main>
         </div>
       </body>
     </html>

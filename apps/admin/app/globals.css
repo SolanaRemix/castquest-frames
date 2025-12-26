@@ -1,19 +1,53 @@
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-html,
-body {
-  padding: 0;
+html, body {
   margin: 0;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background-color: #020617;
-  color: #f9fafb;
+  padding: 0;
+  background: #020617;
+  color: #e5e7eb;
+  font-family: system-ui, sans-serif;
 }
 
-a {
-  color: inherit;
+.cq-admin-body {
+  min-height: 100vh;
+  display: flex;
+}
+
+.cq-admin-shell {
+  display: flex;
+  width: 100%;
+}
+
+.cq-admin-sidebar {
+  width: 220px;
+  background: #0f172a;
+  border-right: 1px solid #1e293b;
+  padding: 20px;
+}
+
+.cq-admin-logo {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  margin-bottom: 20px;
+  color: #22c55e;
+}
+
+.cq-admin-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cq-admin-nav-item {
+  color: #94a3b8;
   text-decoration: none;
+  font-size: 14px;
+}
+
+.cq-admin-nav-item:hover {
+  color: #f1f5f9;
+}
+
+.cq-admin-main {
+  flex: 1;
+  padding: 30px;
 }
