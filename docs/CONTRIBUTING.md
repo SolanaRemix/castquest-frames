@@ -17,7 +17,7 @@ Thank you for your interest in contributing to the CastQuest Protocol.
 
    - [Architecture](./architecture.md)
    - [Modules](./modules.md)
-   - [Smart Brain](./smart-brain.md)
+   - [Smart Brain](./sdk/smart-brain.md)
 
 2. **Pick a surface**
 
@@ -37,7 +37,7 @@ Thank you for your interest in contributing to the CastQuest Protocol.
 4. **Add or update docs**
 
    - Update or create diagrams in `architecture.md` or `flows.md` as needed.
-   - Document new endpoints, files, or behaviors in `smart-brain.md` or `modules.md`.
+   - Document new endpoints, files, or behaviors in `sdk/smart-brain.md` or `modules.md`.
    - If you add an operator surface, mention it in `docs/index.md`.
 
 5. **Open a pull request**

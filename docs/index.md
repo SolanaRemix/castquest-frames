@@ -5,7 +5,7 @@ Welcome to the CastQuest protocol docs. This space describes how media, frames, 
 ## Navigation
 
 - [Architecture](./architecture.md)
-- [Smart Brain](./smart-brain.md)
+- [Smart Brain](./sdk/smart-brain.md)
 - [Modules](./modules.md)
 - [Flows](./flows.md)
 - [Contributor Cards](./contributor-cards.md)
