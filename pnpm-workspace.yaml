@@ -1,4 +1,5 @@
 packages:
-  - "apps/*"
-  - "packages/*"
-  - "infra/*"
+  - apps/*
+  - packages/*
+  - docs-site
+  - infra/*
