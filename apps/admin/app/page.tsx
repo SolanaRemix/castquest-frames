@@ -130,7 +130,7 @@ export default function DashboardPage() {
 
         <Card
           title="Operator Notes"
-          subtitle="Dashboard is a high-level view only"
+          subtitle="This dashboard is a high-level view only"
         >
           <p className="text-xs text-neutral-400">
             System health, worker status, and Brain activity are read from file-based state and
