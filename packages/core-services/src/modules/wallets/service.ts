@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { wallets } from '@/lib/db/schema';
-import { eq, and } from 'drizzle-orm';
 import { logger } from '@/lib/logger';
+import { eq } from 'drizzle-orm';
 
 export class WalletService {
   /**

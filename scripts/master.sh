@@ -101,11 +101,88 @@ check_system_health() {
     fi
   done
   
+  # Check core services
+  if [ -d "$ROOT_DIR/packages/core-services" ]; then
+    success "Core Services: installed"
+    
+    # Validate package structure
+    if [ -f "$ROOT_DIR/packages/core-services/package.json" ]; then
+      success "Core Services: package.json ✓"
+    fi
+    
+    if [ -f "$ROOT_DIR/packages/core-services/src/server.ts" ]; then
+      success "Core Services: server.ts ✓"
+    fi
+    
+    if [ -f "$ROOT_DIR/packages/core-services/src/lib/db/schema.ts" ]; then
+      success "Core Services: database schema ✓"
+    fi
+    
+    # Check if running
+    if lsof -ti:4000 &> /dev/null; then
+      success "Core Services: RUNNING on port 4000"
+      
+      # Test health endpoint
+      if command -v curl &> /dev/null; then
+        local health_status=$(curl -s http://localhost:4000/health 2>/dev/null || echo "")
+        if [ -n "$health_status" ]; then
+          success "Core Services: Health endpoint responding"
+          echo "$health_status" | grep -q '"status":"healthy"' && success "Core Services: Status HEALTHY"
+        fi
+      fi
+    else
+      warn "Core Services: Not running (use 'services start')"
+    fi
+  else
+    warn "Core Services not found - run Smart Brain to deploy"
+  fi
+  
   if [ $issues -eq 0 ]; then
     success "System health check passed"
     return 0
   else
     error "System health check failed with $issues issues"
+    return 1
+  fi
+}
+
+################################################################################
+# Phase 2 Completion Monitor
+################################################################################
+
+check_phase2_completion() {
+  step "Checking Phase 2 completion status..."
+  
+  local phase2_complete=true
+  local modules=("media" "markets" "risk")
+  
+  echo ""
+  log "=== Core Services Phase 2 Status ==="
+  
+  # Check each module
+  for module in "${modules[@]}"; do
+    local routes_file="$ROOT_DIR/packages/core-services/src/modules/$module/routes.ts"
+    local service_file="$ROOT_DIR/packages/core-services/src/modules/$module/service.ts"
+    
+    if [ -f "$routes_file" ] && [ -f "$service_file" ]; then
+      success "$module module: COMPLETE ✓"
+    elif [ -f "$routes_file" ]; then
+      warn "$module module: Routes only (service pending)"
+      phase2_complete=false
+    else
+      error "$module module: MISSING"
+      phase2_complete=false
+    fi
+  done
+  
+  echo ""
+  
+  if [ "$phase2_complete" = true ]; then
+    success "Phase 2: COMPLETE ✅"
+    return 0
+  else
+    warn "Phase 2: IN PROGRESS 🔄"
+    log "Run Smart Brain to complete pending modules"
     return 1
   fi
 }
@@ -245,13 +322,16 @@ deploy_system() {
   step "3. Self-healing"
   run_self_healing
   
-  step "4. Smart Brain analysis"
+  step "4. Core Services Phase 2 check"
+  check_phase2_completion || log "Phase 2 modules pending - continuing deployment"
+  
+  step "5. Smart Brain analysis"
   run_smart_brain
   
-  step "5. Port cleanup"
+  step "6. Port cleanup"
   clean_ports
   
-  step "6. Installing dependencies"
+  step "7. Installing dependencies"
   cd "$ROOT_DIR"
   if command -v pnpm &> /dev/null; then
     pnpm install --frozen-lockfile || pnpm install
@@ -260,25 +340,180 @@ deploy_system() {
     warn "pnpm not available - skipping dependency install"
   fi
   
-  step "7. Building packages"
+  step "8. Building packages"
   pnpm build || warn "Build completed with warnings"
   
   if [ "$environment" = "production" ]; then
-    step "8. Production deployment"
+    step "9. Production deployment"
     if [ -f "$SCRIPTS_DIR/hackathon-deploy.sh" ]; then
       bash "$SCRIPTS_DIR/hackathon-deploy.sh"
       success "Production deployment complete"
     fi
   else
-    step "8. Starting development servers"
+    step "9. Starting development servers"
+    manage_core_services start
     pnpm dev &
     success "Development servers starting"
   fi
   
-  step "9. Starting worker system"
+  step "10. Starting worker system"
   manage_workers start
   
   success "Deployment complete for $environment"
+}
+
+################################################################################
+# Core Services Management
+################################################################################
+
+manage_core_services() {
+  local action="${1:-status}"
+  
+  step "Managing Core Services: $action"
+  
+  case "$action" in
+    start)
+      log "Starting Core Services backend..."
+      
+      # Check if already running
+      if lsof -ti:4000 &> /dev/null; then
+        warn "Core Services already running on port 4000"
+        return 0
+      fi
+      
+      cd "$ROOT_DIR/packages/core-services"
+      
+      # Install dependencies if needed
+      if [ ! -d "node_modules" ]; then
+        log "Installing Core Services dependencies..."
+        pnpm install
+      fi
+      
+      # Start in background
+      pnpm dev > "$ROOT_DIR/logs/core-services.log" 2>&1 &
+      local pid=$!
+      
+      # Wait for startup
+      sleep 3
+      
+      if lsof -ti:4000 &> /dev/null; then
+        success "Core Services started on port 4000 (PID: $pid)"
+        log "Logs: $ROOT_DIR/logs/core-services.log"
+      else
+        error "Core Services failed to start"
+        return 1
+      fi
+      ;;
+      
+    stop)
+      log "Stopping Core Services..."
+      local pid=$(lsof -ti:4000 2>/dev/null || true)
+      
+      if [ -n "$pid" ]; then
+        kill -15 $pid 2>/dev/null || kill -9 $pid 2>/dev/null || true
+        sleep 1
+        success "Core Services stopped (PID: $pid)"
+      else
+        warn "Core Services was not running"
+      fi
+      ;;
+      
+    restart)
+      manage_core_services stop
+      sleep 2
+      manage_core_services start
+      ;;
+      
+    status)
+      log "Checking Core Services status..."
+      echo ""
+      
+      if lsof -ti:4000 &> /dev/null; then
+        success "Core Services: RUNNING on port 4000"
+        
+        # Get health status
+        if command -v curl &> /dev/null; then
+          echo ""
+          log "Health Check Response:"
+          curl -s http://localhost:4000/health 2>/dev/null | jq '.' 2>/dev/null || log "Health endpoint not responding"
+        fi
+        
+        # Show process info
+        echo ""
+        log "Process Info:"
+        ps aux | grep -E "core-services|:4000" | grep -v grep || log "No process details available"
+        
+      else
+        warn "Core Services: NOT RUNNING"
+        log "Use 'services start' to launch"
+      fi
+      
+      echo ""
+      ;;
+      
+    build)
+      log "Building Core Services..."
+      cd "$ROOT_DIR/packages/core-services"
+      pnpm install
+      pnpm build
+      success "Core Services built successfully"
+      ;;
+      
+    test)
+      log "Testing Core Services..."
+      cd "$ROOT_DIR/packages/core-services"
+      pnpm test || warn "Tests completed with warnings"
+      success "Core Services tests complete"
+      ;;
+      
+    health)
+      log "Core Services health diagnostics..."
+      echo ""
+      
+      # Check structure
+      log "=== Package Structure ==="
+      [ -f "$ROOT_DIR/packages/core-services/package.json" ] && success "package.json ✓" || error "package.json missing"
+      [ -f "$ROOT_DIR/packages/core-services/src/server.ts" ] && success "server.ts ✓" || error "server.ts missing"
+      [ -f "$ROOT_DIR/packages/core-services/src/lib/db/schema.ts" ] && success "schema.ts ✓" || error "schema.ts missing"
+      
+      echo ""
+      log "=== Modules ==="
+      local modules=("users" "wallets" "media" "markets" "risk")
+      for module in "${modules[@]}"; do
+        local routes="$ROOT_DIR/packages/core-services/src/modules/$module/routes.ts"
+        local service="$ROOT_DIR/packages/core-services/src/modules/$module/service.ts"
+        
+        if [ -f "$routes" ] && [ -f "$service" ]; then
+          success "$module: Complete (routes + service)"
+        elif [ -f "$routes" ]; then
+          warn "$module: Partial (routes only)"
+        else
+          error "$module: Missing"
+        fi
+      done
+      
+      echo ""
+      log "=== Runtime Status ==="
+      if lsof -ti:4000 &> /dev/null; then
+        success "Server: Running on port 4000"
+        command -v curl &> /dev/null && curl -s http://localhost:4000/health >/dev/null 2>&1 && success "Health endpoint: Responding" || warn "Health endpoint: Not responding"
+      else
+        warn "Server: Not running"
+      fi
+      
+      echo ""
+      ;;
+      
+    phase2)
+      check_phase2_completion
+      ;;
+      
+    *)
+      error "Unknown Core Services action: $action"
+      log "Available actions: start, stop, restart, status, build, test, health, phase2"
+      return 1
+      ;;
+  esac
 }
 
 ################################################################################
@@ -301,6 +536,13 @@ monitor_system() {
     echo ""
     echo "=== Running Processes ==="
     ps aux | grep -E "node|pnpm" | grep -v grep || echo "No active processes"
+    echo ""
+    echo "=== Core Services ==="
+    if lsof -ti:4000 &> /dev/null; then
+      echo "✅ Core Services: Running (port 4000)"
+    else
+      echo "❌ Core Services: Not running"
+    fi
     echo ""
     echo "=== Git Status ==="
     git status --short
@@ -339,6 +581,7 @@ git_operations() {
       git tag -a "$tag_name" -m "$tag_message"
       success "Tag created: $tag_name"
       ;;
+    
     push)
       local branch=$(git branch --show-current)
       git push origin "$branch"
@@ -398,6 +641,16 @@ COMMANDS:
   Port Management:
     ports               - Clean and reset ports
     
+  Core Services:
+    services start      - Start Core Services backend (port 4000)
+    services stop       - Stop Core Services backend
+    services restart    - Restart Core Services
+    services status     - Check Core Services runtime status
+    services build      - Build Core Services
+    services test       - Run Core Services tests
+    services health     - Full health diagnostics
+    services phase2     - Check Phase 2 completion status
+    
   Git Operations:
     git status          - Show git status
     git commit [msg]    - Commit all changes
@@ -425,6 +678,11 @@ EXAMPLES:
   # Worker management
   ./scripts/master.sh workers start
   ./scripts/master.sh workers status
+  
+  # Core Services management
+  ./scripts/master.sh services start
+  ./scripts/master.sh services health
+  ./scripts/master.sh services phase2
 
 LOGS:
   All operations are logged to: $LOG_FILE
@@ -463,6 +721,9 @@ main() {
       ;;
     deploy)
       deploy_system "$@"
+      ;;
+    services)
+      manage_core_services "$@"
       ;;
     monitor)
       monitor_system

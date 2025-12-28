@@ -1,7 +1,7 @@
-import { Router, Request, Response } from 'express';
-import { UserService } from './service';
-import { z } from 'zod';
 import { logger } from '@/lib/logger';
+import { Request, Response, Router } from 'express';
+import { z } from 'zod';
+import { UserService } from './service';
 
 const router = Router();
 const userService = new UserService();

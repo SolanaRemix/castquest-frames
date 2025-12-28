@@ -1,12 +1,12 @@
+import { config } from '@/lib/config';
 import { db } from '@/lib/db';
 import { users, verificationTokens } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import crypto from 'crypto';
-import { config } from '@/lib/config';
 import { logger } from '@/lib/logger';
-import type { User, UserStatus } from '@/types';
+import type { UserStatus } from '@/types';
+import bcrypt from 'bcrypt';
+import crypto from 'crypto';
+import { eq } from 'drizzle-orm';
+import jwt from 'jsonwebtoken';
 
 export class UserService {
   /**

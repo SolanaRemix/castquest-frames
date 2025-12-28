@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, boolean, bigint, integer, decimal, uuid, index, uniqueIndex } from 'drizzle-orm/pg-core';
+import { bigint, boolean, decimal, index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 // ============================================================================
 // Users Table

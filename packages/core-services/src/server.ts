@@ -1,17 +1,17 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import helmet from 'helmet';
+import express, { Express, NextFunction, Request, Response } from 'express';
 import rateLimit from 'express-rate-limit';
+import helmet from 'helmet';
 import { config } from './lib/config';
-import { logger } from './lib/logger';
 import { checkDatabaseHealth, closeDatabase } from './lib/db';
+import { logger } from './lib/logger';
 
 // Import route modules
+import { marketRoutes } from './modules/markets/routes';
+import { mediaRoutes } from './modules/media/routes';
+import { riskRoutes } from './modules/risk/routes';
 import { userRoutes } from './modules/users/routes';
 import { walletRoutes } from './modules/wallets/routes';
-import { mediaRoutes } from './modules/media/routes';
-import { marketRoutes } from './modules/markets/routes';
-import { riskRoutes } from './modules/risk/routes';
 
 const app: Express = express();
 
