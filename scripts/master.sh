@@ -790,6 +790,189 @@ manage_contracts() {
 }
 
 ################################################################################
+# Frames Management
+################################################################################
+
+manage_frames() {
+  local operation="${1:-status}"
+  shift || true
+  
+  cd "$ROOT_DIR/packages/frames"
+  
+  case "$operation" in
+    start)
+      step "Starting Frames server..."
+      if pgrep -f "next dev.*3002" > /dev/null; then
+        warn "Frames server already running on port 3002"
+        return 0
+      fi
+      
+      # Check if dependencies are installed
+      if [ ! -d "node_modules" ]; then
+        log "Installing dependencies..."
+        pnpm install
+      fi
+      
+      # Start in background
+      nohup pnpm dev > "$ROOT_DIR/logs/frames-$(date +%Y%m%d-%H%M%S).log" 2>&1 &
+      local pid=$!
+      echo $pid > "$ROOT_DIR/.frames.pid"
+      
+      sleep 3
+      
+      if curl -s http://localhost:3002 > /dev/null 2>&1; then
+        success "Frames server started on port 3002 (PID: $pid)"
+        log "Demo page: http://localhost:3002"
+        log "Tiny signal: http://localhost:3002/api/frames/tiny-signal?token=ADDRESS"
+        log "Token detail: http://localhost:3002/api/frames/token-detail?token=ADDRESS"
+        log "CAST overview: http://localhost:3002/api/frames/cast-overview"
+      else
+        error "Frames server failed to start"
+        return 1
+      fi
+      ;;
+      
+    stop)
+      step "Stopping Frames server..."
+      if [ -f "$ROOT_DIR/.frames.pid" ]; then
+        local pid=$(cat "$ROOT_DIR/.frames.pid")
+        kill $pid 2>/dev/null || true
+        rm "$ROOT_DIR/.frames.pid"
+        success "Frames server stopped"
+      else
+        pkill -f "next dev.*3002" || warn "No Frames server running"
+      fi
+      ;;
+      
+    restart)
+      manage_frames stop
+      sleep 2
+      manage_frames start
+      ;;
+      
+    status)
+      step "Checking Frames server status..."
+      
+      if pgrep -f "next dev.*3002" > /dev/null; then
+        success "Frames server: RUNNING"
+        
+        if [ -f "$ROOT_DIR/.frames.pid" ]; then
+          local pid=$(cat "$ROOT_DIR/.frames.pid")
+          log "PID: $pid"
+        fi
+        
+        log "Port: 3002"
+        log "URL: http://localhost:3002"
+      else
+        warn "Frames server: NOT RUNNING"
+        return 1
+      fi
+      ;;
+      
+    build)
+      step "Building Frames package..."
+      pnpm build
+      success "Frames built successfully"
+      ;;
+      
+    test)
+      step "Testing Frames..."
+      pnpm typecheck
+      success "Frames tests passed"
+      ;;
+      
+    health)
+      step "Running Frames health diagnostics..."
+      
+      local checks_passed=0
+      local checks_failed=0
+      
+      # Check dependencies
+      if [ -d "node_modules" ]; then
+        success "✓ Dependencies installed"
+        ((checks_passed++))
+      else
+        error "✗ Dependencies not installed"
+        ((checks_failed++))
+      fi
+      
+      # Check server
+      if pgrep -f "next dev.*3002" > /dev/null; then
+        success "✓ Server running on port 3002"
+        ((checks_passed++))
+        
+        # Test frame endpoints
+        local test_token="0x1111111111111111111111111111111111111111"
+        
+        if curl -s "http://localhost:3002/api/frames/tiny-signal?token=$test_token" | grep -q "fc:frame" 2>/dev/null; then
+          success "✓ Tiny signal frame responding"
+          ((checks_passed++))
+        else
+          warn "✗ Tiny signal frame not responding"
+          ((checks_failed++))
+        fi
+        
+        if curl -s "http://localhost:3002/api/frames/token-detail?token=$test_token" | grep -q "fc:frame" 2>/dev/null; then
+          success "✓ Token detail frame responding"
+          ((checks_passed++))
+        else
+          warn "✗ Token detail frame not responding"
+          ((checks_failed++))
+        fi
+        
+        if curl -s "http://localhost:3002/api/frames/cast-overview" | grep -q "fc:frame" 2>/dev/null; then
+          success "✓ CAST overview frame responding"
+          ((checks_passed++))
+        else
+          warn "✗ CAST overview frame not responding"
+          ((checks_failed++))
+        fi
+      else
+        warn "✗ Server not running"
+        ((checks_failed++))
+      fi
+      
+      # Check Core Services integration
+      if curl -s http://localhost:4000/api/v1/health > /dev/null 2>&1; then
+        success "✓ Core Services available (port 4000)"
+        ((checks_passed++))
+      else
+        warn "✗ Core Services not available (frames need API data)"
+        ((checks_failed++))
+      fi
+      
+      banner "FRAMES HEALTH SUMMARY"
+      echo "Checks Passed: $checks_passed"
+      echo "Checks Failed: $checks_failed"
+      
+      if [ $checks_failed -eq 0 ]; then
+        success "All frames checks passed! ✅"
+        return 0
+      else
+        warn "Some frames checks failed"
+        return 1
+      fi
+      ;;
+      
+    logs)
+      step "Showing Frames logs..."
+      local latest_log=$(ls -t "$ROOT_DIR/logs/frames-"*.log 2>/dev/null | head -1)
+      if [ -n "$latest_log" ]; then
+        tail -f "$latest_log"
+      else
+        warn "No Frames logs found"
+      fi
+      ;;
+      
+    *)
+      error "Unknown frames operation: $operation"
+      log "Available: start, stop, restart, status, build, test, health, logs"
+      return 1
+      ;;
+  esac
+}
+
+################################################################################
 # Git Operations
 ################################################################################
 
@@ -898,6 +1081,16 @@ COMMANDS:
     contracts clean     - Clean build artifacts
     contracts status    - Check contracts package status
     
+  Frames (Farcaster):
+    frames start        - Start Frames server (port 3002)
+    frames stop         - Stop Frames server
+    frames restart      - Restart Frames server
+    frames status       - Check Frames server status
+    frames build        - Build production Frames
+    frames test         - Run Frames tests (typecheck, lint)
+    frames health       - Full Frames health diagnostics
+    frames logs         - Show Frames server logs
+    
   Git Operations:
     git status          - Show git status
     git commit [msg]    - Commit all changes
@@ -945,6 +1138,11 @@ EXAMPLES:
   # Smart Contracts
   ./scripts/master.sh contracts build
   ./scripts/master.sh contracts test
+  
+  # Frames (Farcaster)
+  ./scripts/master.sh frames start
+  ./scripts/master.sh frames health
+  ./scripts/master.sh frames logs
 
 LOGS:
   All operations are logged to: $LOG_FILE
@@ -989,6 +1187,9 @@ main() {
       ;;
     contracts)
       manage_contracts "$@"
+      ;;
+    frames)
+      manage_frames "$@"
       ;;
     monitor)
       monitor_system
