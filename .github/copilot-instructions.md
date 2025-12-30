@@ -68,8 +68,8 @@ examples/      - Example frame definitions and usage
 nvm install 20
 nvm use 20
 
-# Install pnpm globally
-npm install -g pnpm@9
+# Install pnpm globally (version 9.x)
+npm install -g pnpm@9.0.0
 ```
 
 ### Installation
