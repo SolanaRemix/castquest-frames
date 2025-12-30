@@ -31,6 +31,23 @@ Master Orchestrator
 
 ## Usage
 
+### Prerequisites
+
+**Required:**
+- **Node.js 20+** (prevents ERR_INVALID_THIS errors)
+- **pnpm 9+** (package manager)
+- Git
+
+**Quick setup:**
+```bash
+# Use nvm with project's .nvmrc
+nvm use
+
+# Or install manually
+nvm install 20 && nvm use 20
+npm install -g pnpm@9
+```
+
 ### Basic Command Structure
 
 ```bash
@@ -44,7 +61,7 @@ Master Orchestrator
 ./scripts/master.sh health
 ```
 Performs comprehensive system health check:
-- Node.js and pnpm versions
+- Node.js 20+ and pnpm 9+ versions (with validation)
 - Git availability
 - Workspace structure validation
 - Required directories verification
