@@ -131,7 +131,7 @@ bash scripts/healer.sh
 - **Functions**: camelCase
 - **Constants**: UPPER_SNAKE_CASE for true constants
 - **Packages**: @castquest/package-name format
-- **Remove all COSMOS references** - this is CAST QUEST
+- **Project Name**: Always use "CastQuest" or "CAST QUEST", never "COSMOS"
 
 ### Component Structure
 - Use the Neon Glass design system from `@castquest/neo-ux-core`
@@ -282,9 +282,10 @@ Frames are the core content unit in CastQuest:
 - Check for import path issues
 
 ### Type Errors
-- Some type mismatches in `core-services` are known and don't prevent builds
-- Can be fixed incrementally
+- TypeScript is configured with `strict: false` to allow rapid iteration
+- Focus on functionality first, type correctness second
 - Don't block on minor type issues if build succeeds
+- Can be fixed incrementally as the codebase matures
 
 ### Port Conflicts
 - Web app: port 3000
