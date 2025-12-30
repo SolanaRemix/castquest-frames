@@ -63,22 +63,35 @@ check_system_health() {
   
   local issues=0
   
-  # Check Node.js
+  # Check Node.js (require 20+)
   if command -v node &> /dev/null; then
     local node_version=$(node -v)
-    success "Node.js: $node_version"
+    local node_major=$(echo "$node_version" | cut -d'v' -f2 | cut -d'.' -f1)
+    if [ "$node_major" -ge 20 ]; then
+      success "Node.js: $node_version (✓ >= 20.0.0)"
+    else
+      error "Node.js $node_version is too old. Required: Node.js 20+ (to fix ERR_INVALID_THIS)"
+      warn "Install Node 20+: https://nodejs.org or use nvm: nvm install 20 && nvm use 20"
+      ((issues++))
+    fi
   else
-    error "Node.js not found"
+    error "Node.js not found. Required: Node.js 20+"
     ((issues++))
   fi
   
-  # Check pnpm
+  # Check pnpm (require 9+)
   if command -v pnpm &> /dev/null; then
     local pnpm_version=$(pnpm -v)
-    success "pnpm: $pnpm_version"
+    local pnpm_major=$(echo "$pnpm_version" | cut -d'.' -f1)
+    if [ "$pnpm_major" -ge 9 ]; then
+      success "pnpm: $pnpm_version (✓ >= 9.0.0)"
+    else
+      warn "pnpm $pnpm_version is too old. Upgrading to pnpm 9+..."
+      npm install -g pnpm@9
+    fi
   else
-    warn "pnpm not found - will install"
-    npm install -g pnpm
+    warn "pnpm not found - installing pnpm 9+"
+    npm install -g pnpm@9
   fi
   
   # Check git
@@ -343,20 +356,28 @@ deploy_system() {
   step "8. Building packages"
   pnpm build || warn "Build completed with warnings"
   
+  step "9. Smart Brain Oracle Audit"
+  if [ -f "$SCRIPTS_DIR/audit.sh" ]; then
+    bash "$SCRIPTS_DIR/audit.sh" || warn "Audit completed with warnings"
+    success "Smart Brain audit complete"
+  else
+    warn "audit.sh not found - skipping audit"
+  fi
+  
   if [ "$environment" = "production" ]; then
-    step "9. Production deployment"
+    step "10. Production deployment"
     if [ -f "$SCRIPTS_DIR/hackathon-deploy.sh" ]; then
       bash "$SCRIPTS_DIR/hackathon-deploy.sh"
       success "Production deployment complete"
     fi
   else
-    step "9. Starting development servers"
+    step "10. Starting development servers"
     manage_core_services start
     pnpm dev &
     success "Development servers starting"
   fi
   
-  step "10. Starting worker system"
+  step "11. Starting worker system"
   manage_workers start
   
   success "Deployment complete for $environment"
@@ -1083,6 +1104,7 @@ COMMANDS:
     contracts gas       - Generate gas usage report
     contracts clean     - Clean build artifacts
     contracts status    - Check contracts package status
+    audit               - Run Smart Brain Oracle audit (comprehensive)
     
   Frames (Farcaster):
     frames start        - Start Frames server (port 3002)
@@ -1200,6 +1222,15 @@ main() {
       ;;
     contracts)
       manage_contracts "$@"
+      ;;
+    audit)
+      # Run Smart Brain Oracle audit
+      if [ -f "$SCRIPTS_DIR/audit.sh" ]; then
+        bash "$SCRIPTS_DIR/audit.sh"
+      else
+        error "audit.sh not found at $SCRIPTS_DIR/audit.sh"
+        exit 1
+      fi
       ;;
     frames)
       manage_frames "$@"

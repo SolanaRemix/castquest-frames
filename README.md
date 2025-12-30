@@ -42,7 +42,25 @@ examples/frames/ - Example frame definitions
 
 See CONTRIBUTING.md.
 
-## 💸 Sponsors & Partners
+## � Prerequisites
+
+**Required:**
+- **Node.js 20+** (to prevent ERR_INVALID_THIS errors)
+- **pnpm 9+** (package manager)
+
+**Install with nvm:**
+```bash
+nvm install 20
+nvm use 20
+npm install -g pnpm@9
+```
+
+**Or use the .nvmrc file:**
+```bash
+nvm use  # Automatically uses Node 20.19.6
+```
+
+## �💸 Sponsors & Partners
 
 Site: https://castquest.xyz (placeholder)
 Docs: https://docs.castquest.xyz (placeholder)
