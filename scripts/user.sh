@@ -124,7 +124,8 @@ export default function DashboardPage() {
     };
 
     getUser();
-  }, [router, supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -158,11 +159,17 @@ EOF
     mkdir -p apps/web/hooks
     if [ ! -f "apps/web/hooks/useRealtime.ts" ]; then
       cat > apps/web/hooks/useRealtime.ts << 'EOF'
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
 export function useRealtime(table: string, callback: (payload: any) => void) {
   const supabase = createClientComponentClient();
+  const callbackRef = useRef(callback);
+
+  // Keep callback ref updated without resubscribing
+  useEffect(() => {
+    callbackRef.current = callback;
+  }, [callback]);
 
   useEffect(() => {
     const channel = supabase
@@ -170,14 +177,14 @@ export function useRealtime(table: string, callback: (payload: any) => void) {
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table },
-        callback
+        (payload) => callbackRef.current(payload)
       )
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [table, callback, supabase]);
+  }, [table, supabase]);
 }
 EOF
       echo "✓ Created realtime hook"

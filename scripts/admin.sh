@@ -54,7 +54,8 @@ export default function AdminUsersPage() {
     };
 
     fetchUsers();
-  }, [supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading) {
     return <div className="p-8">Loading users...</div>;
@@ -141,7 +142,8 @@ export default function AdminLayout({
     };
 
     checkAdmin();
-  }, [router, supabase]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -199,14 +201,13 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/auth/login', req.url));
     }
 
-    // Check admin role
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single();
+    // Check admin role from JWT metadata to avoid per-request DB queries
+    const user = session.user;
+    const metadataRole =
+      (user.user_metadata && (user.user_metadata as any).role) ||
+      (user.app_metadata && (user.app_metadata as any).role);
 
-    if (profile?.role !== 'admin') {
+    if (metadataRole !== 'admin') {
       return NextResponse.redirect(new URL('/dashboard', req.url));
     }
   }
