@@ -3,7 +3,6 @@ dist
 .env
 .env.*
 .env.local
-pnpm-lock.yaml
 .DS_Store
 coverage
 
