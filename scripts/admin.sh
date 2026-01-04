@@ -35,22 +35,23 @@ else
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { permissionsService, type User } from '@castquest/sdk';
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClientComponentClient();
 
   useEffect(() => {
     const fetchUsers = async () => {
-      // This would typically use a server-side API route with service role
-      const { data, error } = await supabase.from('profiles').select('*');
-      
-      if (data) {
-        setUsers(data);
+      try {
+        // Use CastQuest PermissionsService to fetch users
+        const allUsers = permissionsService.getUsers();
+        setUsers(allUsers);
+      } catch (error) {
+        console.error('Failed to fetch users:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     fetchUsers();
@@ -69,10 +70,16 @@ export default function AdminUsersPage() {
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Email
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                Created
+                Roles
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
+                Status
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">
                 Actions
@@ -82,9 +89,15 @@ export default function AdminUsersPage() {
           <tbody className="divide-y divide-gray-200">
             {users.map((user) => (
               <tr key={user.id}>
+                <td className="px-6 py-4 whitespace-nowrap">{user.name}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{user.email}</td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  {new Date(user.created_at).toLocaleDateString()}
+                  {user.roles.join(', ')}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`px-2 py-1 text-xs rounded ${user.active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                    {user.active ? 'Active' : 'Inactive'}
+                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <button className="text-blue-600 hover:text-blue-800">
@@ -108,9 +121,9 @@ EOF
       cat > apps/admin/app/admin/layout.tsx << 'EOF'
 'use client';
 
-import { useEffect } from 'react';
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { permissionsService } from '@castquest/sdk';
 
 export default function AdminLayout({
   children,
@@ -118,32 +131,46 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const supabase = createClientComponentClient();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkAdmin = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        router.push('/auth/login');
-        return;
-      }
-
-      // Check if user has admin role
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (profile?.role !== 'admin') {
+      try {
+        // In a real app, get the current user ID from your auth system
+        // For now, this is a placeholder that should be replaced with actual auth
+        const currentUserId = 'admin'; // Replace with actual user ID from auth
+        
+        // Check if user has system.admin or dashboard.admin permission
+        const hasAdminAccess = 
+          permissionsService.hasPermission(currentUserId, 'system.admin') ||
+          permissionsService.hasPermission(currentUserId, 'dashboard.admin');
+        
+        if (!hasAdminAccess) {
+          router.push('/dashboard');
+          return;
+        }
+        
+        setIsAuthorized(true);
+      } catch (error) {
+        console.error('Admin check failed:', error);
         router.push('/dashboard');
+      } finally {
+        setLoading(false);
       }
     };
 
     checkAdmin();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (loading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!isAuthorized) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -183,36 +210,29 @@ EOF
     # Create middleware for protected routes
     if [ ! -f "apps/admin/middleware.ts" ]; then
       cat > apps/admin/middleware.ts << 'EOF'
-import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { permissionsService } from '@castquest/sdk';
 
 export async function middleware(req: NextRequest) {
-  const res = NextResponse.next();
-  const supabase = createMiddlewareClient({ req, res });
-
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
-
   // Check if accessing admin routes
   if (req.nextUrl.pathname.startsWith('/admin')) {
-    if (!session) {
-      return NextResponse.redirect(new URL('/auth/login', req.url));
-    }
-
-    // Check admin role from JWT metadata to avoid per-request DB queries
-    const user = session.user;
-    const metadataRole =
-      (user.user_metadata && (user.user_metadata as any).role) ||
-      (user.app_metadata && (user.app_metadata as any).role);
-
-    if (metadataRole !== 'admin') {
+    // In a real app, get the current user ID from your auth system
+    // This would typically come from a session cookie or JWT
+    // For now, this is a placeholder
+    const currentUserId = req.cookies.get('user_id')?.value || 'guest';
+    
+    // Check if user has admin permissions using PermissionsService
+    const hasAdminAccess = 
+      permissionsService.hasPermission(currentUserId, 'system.admin') ||
+      permissionsService.hasPermission(currentUserId, 'dashboard.admin');
+    
+    if (!hasAdminAccess) {
       return NextResponse.redirect(new URL('/dashboard', req.url));
     }
   }
 
-  return res;
+  return NextResponse.next();
 }
 
 export const config = {
