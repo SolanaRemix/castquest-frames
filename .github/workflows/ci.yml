@@ -1,52 +1,42 @@
-name: CI
-
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-
-jobs:
-  ci:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9
 
+      # Preserve pnpm store caching (from PR branch)
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      # Install dependencies (merged logic)
       - name: Install dependencies
         run: pnpm install --frozen-lockfile || pnpm install
 
+      # Lint (from main)
       - name: Lint
         run: pnpm lint || echo "Lint failed, please fix locally."
 
+      # Typecheck (from main)
       - name: Typecheck
         run: pnpm typecheck || echo "Typecheck failed, please fix locally."
 
+      # Test (from main)
       - name: Test
         run: pnpm test -- --watch=false || echo "Tests failed, please review."
 
+      # Build UI (from main)
       - name: Build UI
         run: pnpm --filter ui build || pnpm build
 
+      # Build Frames (from main)
       - name: Build Frames
         run: pnpm --filter frames build || echo "No frames build script, skipping."
-
-      - name: Build Smart Brain
-        run: pnpm --filter smart-brain build || echo "No smart-brain build script, skipping."
-
-      - name: Summary
-        run: |
-          echo "CI pipeline completed."
-          echo "Check lint/typecheck/test logs for any soft failures."
