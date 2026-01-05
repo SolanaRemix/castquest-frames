@@ -105,7 +105,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
           {/* Dashboard Home */}
           <div className="px-3">
             <NavItem
-              href="/"
+              href="/dashboard"
               label="Dashboard"
               icon={LayoutDashboard}
             />
@@ -121,9 +121,9 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
             />
             {openFrames && (
               <div className="space-y-1 pl-3">
-                <NavItem href="/frames" label="All Frames" icon={Boxes} />
+                <NavItem href="/dashboard/frames" label="All Frames" icon={Boxes} />
                 <NavItem href="/frames/create" label="Create Frame" icon={Boxes} />
-                <NavItem href="/frames/templates" label="Templates" icon={Layers} />
+                <NavItem href="/frame-templates" label="Templates" icon={Layers} />
               </div>
             )}
           </div>
@@ -171,7 +171,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
             />
             {openWorkers && (
               <div className="space-y-1 pl-3">
-                <NavItem href="/workers" label="Worker Status" icon={Activity} />
+                <NavItem href="/worker" label="Worker Status" icon={Activity} />
                 <NavItem href="/workers/queue" label="Job Queue" icon={FileJson} />
                 <NavItem href="/workers/metrics" label="Performance" icon={BarChart3} />
               </div>
@@ -188,7 +188,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
             />
             {openBrain && (
               <div className="space-y-1 pl-3">
-                <NavItem href="/brain/events" label="Events Log" icon={FileJson} />
+                <NavItem href="/brain" label="Events Log" icon={FileJson} />
                 <NavItem href="/brain/suggestions" label="Suggestions" icon={Brain} />
                 <NavItem href="/brain/insights" label="ML Insights" icon={BarChart3} />
               </div>
@@ -222,7 +222,7 @@ export default function ShellLayout({ children }: { children: React.ReactNode })
             />
             {openSystem && (
               <div className="space-y-1 pl-3">
-                <NavItem href="/system/health" label="Health Monitoring" icon={Activity} />
+                <NavItem href="/systems" label="Health Monitoring" icon={Activity} />
                 <NavItem href="/system/config" label="Configuration" icon={Settings} />
                 <NavItem href="/system/logs" label="Logs" icon={FileJson} />
               </div>
