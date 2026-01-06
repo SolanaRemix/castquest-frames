@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Bell, Mail, Smartphone, MessageSquare, Save } from 'lucide-react';
+import { Mail, Smartphone, MessageSquare, Save } from 'lucide-react';
 
 export default function NotificationsPage() {
   const [emailNotifications, setEmailNotifications] = useState({
