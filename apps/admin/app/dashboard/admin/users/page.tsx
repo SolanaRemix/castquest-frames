@@ -158,7 +158,7 @@ export default function AdminUsersPage() {
                   <td className="px-6 py-4">
                     <span
                       className={`inline-flex px-2 py-1 text-xs font-medium rounded border ${getStatusColor(
-                        user.status
+                        user.status === 'suspended' ? 'inactive' : user.status
                       )}`}
                     >
                       {user.status}
