@@ -22,6 +22,12 @@ export default function ProfilePage() {
   const { wallets } = useWallets();
   const [copying, setCopying] = useState<string | null>(null);
 
+  // Block explorer URL - configurable for multi-chain support
+  const getExplorerUrl = (address: string) => {
+    const baseUrl = process.env.NEXT_PUBLIC_BLOCK_EXPLORER_URL || 'https://basescan.org';
+    return `${baseUrl}/address/${address}`;
+  };
+
   const copyToClipboard = async (text: string, id: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -104,12 +110,16 @@ export default function ProfilePage() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-2xl font-bold text-white">{user?.email?.address || 'Anonymous'}</span>
+                <span className="text-2xl font-bold text-white">
+                  {user?.id ? `User ${user.id.slice(0, 8)}...` : 'Anonymous User'}
+                </span>
                 {user?.email?.verified && (
                   <CheckCircle className="w-5 h-5 text-green-400" />
                 )}
               </div>
-              <p className="text-slate-400 text-sm">CastQuest User ID: {user?.id}</p>
+              <p className="text-slate-400 text-sm">
+                {user?.email?.address ? `Email: ${user.email.address}` : 'CastQuest User ID: ' + (user?.id || 'N/A')}
+              </p>
             </div>
           </div>
         </motion.div>
@@ -156,7 +166,7 @@ export default function ProfilePage() {
                         )}
                       </button>
                       <a
-                        href={`https://basescan.org/address/${wallet.address}`}
+                        href={getExplorerUrl(wallet.address)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="p-2 bg-slate-700/50 hover:bg-slate-600/50 rounded-lg text-slate-300 transition-all"
