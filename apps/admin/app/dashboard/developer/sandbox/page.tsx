@@ -1,12 +1,8 @@
 'use client';
 
-import { useState } from 'react';
 import { Code2 } from 'lucide-react';
 
 export default function SandboxPage() {
-  const [endpoint, setEndpoint] = useState('/api/quests');
-  const [method, setMethod] = useState('GET');
-  
   return (
     <div className="space-y-6">
       <div>
