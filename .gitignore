@@ -35,3 +35,4 @@ AUDIT-REPORT.md
 # Supabase
 supabase/.branches
 supabase/.temp
+*.tsbuildinfo
