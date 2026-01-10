@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { leaderboardEntries, users } from '@/lib/db/schema';
 import { logger } from '@/lib/logger';
-import { eq, and, desc, sql } from 'drizzle-orm';
+import { eq, and, desc, sql, count } from 'drizzle-orm';
 
 export class LeaderboardService {
   /**
@@ -126,12 +126,16 @@ export class LeaderboardService {
     }
 
     // Get total entries to calculate percentile
-    const total = await db.$count(leaderboardEntries, 
-      and(
-        eq(leaderboardEntries.leaderboardType, leaderboardType),
-        eq(leaderboardEntries.period, period)
-      )
-    );
+    const totalResult = await db
+      .select({ count: count() })
+      .from(leaderboardEntries)
+      .where(
+        and(
+          eq(leaderboardEntries.leaderboardType, leaderboardType),
+          eq(leaderboardEntries.period, period)
+        )
+      );
+    const total = totalResult[0]?.count || 0;
 
     return {
       ...entry,

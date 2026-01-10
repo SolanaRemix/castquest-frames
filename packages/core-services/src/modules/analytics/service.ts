@@ -117,7 +117,8 @@ export class AnalyticsService {
     startDate.setDate(startDate.getDate() - days);
 
     // Get total users
-    const totalUsers = await db.$count(users);
+    const totalUsersResult = await db.select({ count: count() }).from(users);
+    const totalUsers = totalUsersResult[0]?.count || 0;
 
     // Get active users (users who performed any action in the period)
     const activeUsersResult = await db
@@ -133,19 +134,22 @@ export class AnalyticsService {
     const activeUsers = activeUsersResult.length;
 
     // Get total frames created
-    const totalFrames = await db.$count(frameTemplates);
+    const totalFramesResult = await db.select({ count: count() }).from(frameTemplates);
+    const totalFrames = totalFramesResult[0]?.count || 0;
 
     // Get frames created in period
-    const recentFrames = await db.$count(
-      frameTemplates,
-      gte(frameTemplates.createdAt, startDate)
-    );
+    const recentFramesResult = await db
+      .select({ count: count() })
+      .from(frameTemplates)
+      .where(gte(frameTemplates.createdAt, startDate));
+    const recentFrames = recentFramesResult[0]?.count || 0;
 
     // Get total events
-    const totalEvents = await db.$count(
-      analyticsEvents,
-      gte(analyticsEvents.timestamp, startDate)
-    );
+    const totalEventsResult = await db
+      .select({ count: count() })
+      .from(analyticsEvents)
+      .where(gte(analyticsEvents.timestamp, startDate));
+    const totalEvents = totalEventsResult[0]?.count || 0;
 
     // Get top event types
     const eventTypesResult = await db

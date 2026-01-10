@@ -240,8 +240,9 @@ export class QuestsService {
     // Get all active quests
     const allQuests = await this.listQuests({ status: 'active' });
 
-    // Get user's progress
-    const userProgress = await this.getUserProgress(userId);
+    // Get user's progress - returns array
+    const userProgressData = await this.getUserProgress(userId);
+    const userProgress = Array.isArray(userProgressData) ? userProgressData : [];
     const userQuestIds = new Set(userProgress.map((p: any) => p.questId));
 
     // Filter out completed quests
