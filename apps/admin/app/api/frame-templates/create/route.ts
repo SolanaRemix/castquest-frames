@@ -1,10 +1,17 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { FramesService } from '@castquest/core-services';
+import { requireAdmin } from '../../../../lib/auth';
 
 const framesService = new FramesService();
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    // Require admin authentication
+    const adminAuth = requireAdmin(req);
+    if (!adminAuth.authorized) {
+      return NextResponse.json(adminAuth.error, { status: 401 });
+    }
+
     const body = await req.json();
     
     // Validate required fields per core-services schema
@@ -32,19 +39,28 @@ export async function POST(req: Request) {
       category: body.category || 'custom',
       thumbnailUrl: body.thumbnailUrl,
       price: body.price,
-      creatorId: body.creatorId || 'admin',  // Should come from auth
+      // TODO: Extract from admin context once admin authentication provides user context
+      creatorId: body.creatorId || 'system-admin',
       tenantId: body.tenantId,
       templateData: JSON.stringify(templateData),
       version: body.version || '1.0.0',
     });
 
     return NextResponse.json({ ok: true, template });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Failed to create frame template:', error);
+    
+    const errorDetails =
+      error instanceof Error
+        ? error.message
+        : error
+        ? String(error)
+        : 'Unknown error';
+    
     return NextResponse.json(
       { 
         ok: false, 
-        error: 'Failed to create frame template' 
+        error: `Failed to create frame template: ${errorDetails}` 
       },
       { status: 500 }
     );

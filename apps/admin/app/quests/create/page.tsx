@@ -22,6 +22,14 @@ export default function QuestCreatePage() {
     setLoading(true);
 
     try {
+      // Validate requirement count is a valid positive integer
+      const parsedCount = parseInt(requirementCount, 10);
+      if (isNaN(parsedCount) || parsedCount < 1) {
+        setError("Requirement count must be a positive integer");
+        setLoading(false);
+        return;
+      }
+
       const res = await fetch("/api/quests/create", {
         method: "POST",
         body: JSON.stringify({ 
@@ -30,10 +38,10 @@ export default function QuestCreatePage() {
           difficulty,
           category,
           rewardType,
-          rewardAmount,
+          rewardAmount: rewardAmount || undefined,
           requirementType,
           requirementData: {
-            count: parseInt(requirementCount) || 1,
+            count: parsedCount,
           },
         }),
         headers: { "Content-Type": "application/json" },
@@ -144,7 +152,7 @@ export default function QuestCreatePage() {
                 value={rewardAmount}
                 onChange={(e) => setRewardAmount(e.target.value)}
                 placeholder="100"
-                type="number"
+                type="text"
               />
             </div>
           </div>

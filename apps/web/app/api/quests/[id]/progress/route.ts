@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { QuestsService } from '@castquest/core-services';
-import { requireUserId } from '@/lib/auth';
+import { requireUserId, handleAuthError } from '@/lib/auth';
 
 const questsService = new QuestsService();
 
@@ -24,7 +24,7 @@ export async function GET(
     }
 
     // Require authentication
-    const userId = await requireUserId(request);
+    const userId = requireUserId(request);
 
     const progress = await questsService.getUserProgress(userId, params.id);
 
@@ -33,14 +33,10 @@ export async function GET(
       data: progress,
     });
   } catch (error: any) {
-    if (error.message?.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: error.message,
-        },
-        { status: 401 }
-      );
+    // Handle authentication errors consistently
+    const authErrorResponse = handleAuthError(error);
+    if (authErrorResponse) {
+      return authErrorResponse;
     }
 
     console.error('Error getting quest progress:', error);

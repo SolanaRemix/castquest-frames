@@ -7,6 +7,12 @@
 // Export types
 export type { User, Session, AuthContext, DecodedToken } from './types';
 
+// Export custom errors
+export { AuthenticationError, AuthorizationError, SessionExpiredError } from './errors';
+
+// Export error handling utilities
+export { handleAuthError, getErrorDetails } from './middleware';
+
 // Export session utilities
 export {
   getTokenFromRequest,

@@ -48,10 +48,18 @@ export function parseSession(token: string): Session | null {
       return null;
     }
 
+    // Extract expiration from JWT if available
+    let expiresAt: Date | undefined;
+    if ('exp' in decoded && typeof (decoded as any).exp === 'number') {
+      // JWT exp is in seconds since epoch
+      expiresAt = new Date((decoded as any).exp * 1000);
+    }
+
     return {
       userId: decoded.userId,
       email: decoded.email,
       token,
+      expiresAt,
     };
   } catch (error) {
     console.error('Error parsing session:', error);

@@ -2,12 +2,13 @@ import { NextRequest } from 'next/server';
 import { AuthService } from '@castquest/core-services';
 import { User, AuthContext } from './types';
 import { getTokenFromCookies, validateSession, parseSession } from './session';
+import { AuthenticationError } from './errors';
 
 const authService = new AuthService();
 
 /**
  * Require authentication for API routes
- * Returns authenticated user or throws error
+ * Returns authenticated user or throws AuthenticationError
  * 
  * Usage in API routes:
  * ```typescript
@@ -19,14 +20,14 @@ export async function requireUser(request: NextRequest): Promise<User> {
   const session = validateSession(request);
   
   if (!session) {
-    throw new Error('Unauthorized: Authentication required');
+    throw new AuthenticationError('Unauthorized: Authentication required');
   }
 
   // Get full user profile from database
   const user = await authService.getProfile(session.userId);
   
   if (!user) {
-    throw new Error('Unauthorized: User not found');
+    throw new AuthenticationError('Unauthorized: User not found');
   }
 
   return user as User;
@@ -95,13 +96,13 @@ export async function requireAuthContext(request: NextRequest): Promise<AuthCont
   const session = validateSession(request);
   
   if (!session) {
-    throw new Error('Unauthorized: Authentication required');
+    throw new AuthenticationError('Unauthorized: Authentication required');
   }
 
   const user = await authService.getProfile(session.userId);
   
   if (!user) {
-    throw new Error('Unauthorized: User not found');
+    throw new AuthenticationError('Unauthorized: User not found');
   }
 
   return {
@@ -113,8 +114,10 @@ export async function requireAuthContext(request: NextRequest): Promise<AuthCont
 /**
  * Get user ID from request (lightweight alternative to full user fetch)
  * Returns user ID string or null
+ * 
+ * Note: This function is synchronous despite returning a Promise for API consistency
  */
-export async function getUserId(request: NextRequest): Promise<string | null> {
+export function getUserId(request: NextRequest): string | null {
   try {
     const session = validateSession(request);
     return session?.userId || null;
@@ -125,14 +128,16 @@ export async function getUserId(request: NextRequest): Promise<string | null> {
 }
 
 /**
- * Require user ID (throws if not authenticated)
+ * Require user ID (throws AuthenticationError if not authenticated)
  * Returns user ID string
+ * 
+ * Note: This function is synchronous despite returning a Promise for API consistency
  */
-export async function requireUserId(request: NextRequest): Promise<string> {
+export function requireUserId(request: NextRequest): string {
   const session = validateSession(request);
   
   if (!session) {
-    throw new Error('Unauthorized: Authentication required');
+    throw new AuthenticationError('Unauthorized: Authentication required');
   }
 
   return session.userId;

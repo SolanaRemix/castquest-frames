@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FramesService } from '@castquest/core-services';
-import { requireUserId } from '@/lib/auth';
+import { requireUserId, handleAuthError } from '@/lib/auth';
 
 const framesService = new FramesService();
 
@@ -71,7 +71,7 @@ export async function PUT(
     }
 
     // Require authentication
-    const userId = await requireUserId(request);
+    const userId = requireUserId(request);
     
     // Verify ownership
     const template = await framesService.getTemplateById(params.id);
@@ -117,14 +117,10 @@ export async function PUT(
       data: updated,
     });
   } catch (error: any) {
-    if (error.message?.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: error.message,
-        },
-        { status: 401 }
-      );
+    // Handle authentication errors consistently
+    const authErrorResponse = handleAuthError(error);
+    if (authErrorResponse) {
+      return authErrorResponse;
     }
 
     console.error('Error updating frame:', error);
@@ -158,7 +154,7 @@ export async function DELETE(
     }
 
     // Require authentication
-    const userId = await requireUserId(request);
+    const userId = requireUserId(request);
     
     // Verify ownership
     const template = await framesService.getTemplateById(params.id);
@@ -190,14 +186,10 @@ export async function DELETE(
       message: 'Frame template deleted successfully',
     });
   } catch (error: any) {
-    if (error.message?.includes('Unauthorized')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: error.message,
-        },
-        { status: 401 }
-      );
+    // Handle authentication errors consistently
+    const authErrorResponse = handleAuthError(error);
+    if (authErrorResponse) {
+      return authErrorResponse;
     }
 
     console.error('Error deleting frame:', error);

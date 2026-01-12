@@ -1,14 +1,29 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { QuestsService } from '@castquest/core-services';
+import { requireAdmin } from '../../../../lib/auth';
 
 const questsService = new QuestsService();
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
+    // Require admin authentication
+    const adminAuth = requireAdmin(req);
+    if (!adminAuth.authorized) {
+      return NextResponse.json(adminAuth.error, { status: 401 });
+    }
+
     const body = await req.json();
     
-    // Validate required fields per core-services schema
-    if (!body.title || !body.difficulty || !body.category || !body.rewardType || !body.requirementType || !body.requirementData) {
+    // Validate required fields per core-services schema with precise checks
+    if (
+      !body.title ||
+      !body.difficulty ||
+      !body.category ||
+      !body.rewardType ||
+      !body.requirementType ||
+      body.requirementData === undefined ||
+      body.requirementData === null
+    ) {
       return NextResponse.json(
         { 
           ok: false, 
@@ -33,12 +48,20 @@ export async function POST(req: Request) {
     });
 
     return NextResponse.json({ ok: true, quest });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Failed to create quest:', error);
+
+    const errorDetails =
+      error instanceof Error
+        ? error.message
+        : error
+        ? String(error)
+        : 'Unknown error';
+
     return NextResponse.json(
       { 
         ok: false, 
-        error: 'Failed to create quest' 
+        error: `Failed to create quest: ${errorDetails}` 
       },
       { status: 500 }
     );
