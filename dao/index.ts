@@ -14,7 +14,7 @@ export class CastQuestDAO {
 
   async createProposal(title:  string, description: string, actions:  any[]) {
     console.log('Creating proposal:', title);
-    return { proposalId: '.. .' };
+    return { proposalId: '...' };
   }
 
   async vote(proposalId: string, support: boolean) {
