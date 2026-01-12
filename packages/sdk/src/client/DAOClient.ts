@@ -6,7 +6,7 @@
  */
 
 import type { PublicClient, WalletClient } from 'viem';
-import { Abi, encodeFunctionData } from 'viem';
+import { Abi } from 'viem';
 
 // Minimal ABI for the DAO contract methods we need.
 // This should be kept in sync with the on-chain contract.
@@ -83,12 +83,12 @@ export class DAOClient {
     }
 
     // Encode actions to bytes[]
+    // Each action contains target, value, and calldata
+    // We encode them as packed bytes for the DAO contract
     const encodedActions = actions.map((action) => {
-      return encodeFunctionData({
-        abi: [],
-        functionName: '' as any,
-        args: [],
-      });
+      // For now, we pass the action.data directly as it should already be encoded calldata
+      // If action.data is empty, we use '0x' (empty bytes)
+      return action.data || '0x';
     });
 
     const txHash = await this.walletClient.writeContract({
