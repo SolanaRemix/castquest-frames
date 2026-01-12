@@ -27,6 +27,13 @@
  */
 
 export { FramesClient } from './client/FramesClient';
+export { CastQuestClient } from './client/CastQuestClient';
+export type {
+  CastQuestClientConfig,
+  ProposalResponse,
+  FrameResponse,
+  QuestResponse,
+} from './client/CastQuestClient';
 export * from './types/frames';
 export * from './schema/validator';
 export * from './permissions/PermissionsService';
