@@ -1,29 +1,34 @@
 /**
- * Web app authentication utilities
- * 
- * This module provides authentication utilities for the web application,
- * wrapping core-services AuthService with Next.js-specific helpers.
+ * Authentication Module for Web App
+ * Provides authentication utilities compatible with Next.js 14 App Router
+ * and @castquest/core-services
  */
 
-// Export all types
-export * from './types';
+// Export types
+export type { User, Session, AuthContext, DecodedToken } from './types';
+
+// Export custom errors
+export { AuthenticationError, AuthorizationError, SessionExpiredError } from './errors';
+
+// Export error handling utilities
+export { handleAuthError, getErrorDetails } from './middleware';
 
 // Export session utilities
 export {
-  decodeToken,
-  extractToken,
+  getTokenFromRequest,
+  getTokenFromCookies,
   parseSession,
-  parseSessionFromCookie,
   validateSession,
+  isSessionValid,
+  refreshSession,
 } from './session';
 
 // Export auth utilities
 export {
-  createAuthErrorResponse,
-  getUser,
-  getUserId,
-  getUserIdFromRequest,
-  isAuthenticated,
-  requireAuth,
   requireUser,
+  getUser,
+  getUserFromCookies,
+  requireAuthContext,
+  getUserId,
+  requireUserId,
 } from './auth';
