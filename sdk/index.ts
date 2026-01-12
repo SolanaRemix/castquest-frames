@@ -9,5 +9,4 @@
  */
 
 export * from '@castquest/sdk';
-export { default } from '@castquest/sdk';
 

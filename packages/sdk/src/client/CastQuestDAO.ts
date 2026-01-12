@@ -5,7 +5,7 @@
  * Supports proposal creation, voting, and execution.
  */
 
-import type { Abi } from 'viem';
+import type { Abi, Address, WalletClient as ViemWalletClient } from 'viem';
 
 // Minimal ABI for the DAO contract methods we need.
 // This should be kept in sync with the on-chain contract.
@@ -44,14 +44,15 @@ const CAST_QUEST_DAO_ABI: Abi = [
   },
 ];
 
-export interface WalletClient {
-  writeContract: (args: any) => Promise<string>;
-}
+export type WalletClient = ViemWalletClient;
 
 export interface ProposalAction {
   target?: string;
   value?: string;
   data?: string;
+  // If data is already encoded as hex string, use it directly
+  // Otherwise, it should be encoded before being passed to this method
+  encoded?: string;
 }
 
 export interface CreateProposalResult {
@@ -62,10 +63,10 @@ export interface CreateProposalResult {
  * CastQuest DAO client for on-chain governance
  */
 export class CastQuestDAO {
-  private contractAddress: string;
+  private contractAddress: Address;
   private provider: WalletClient;
 
-  constructor(contractAddress: string, provider: WalletClient) {
+  constructor(contractAddress: Address, provider: WalletClient) {
     this.contractAddress = contractAddress;
     this.provider = provider;
   }
@@ -85,14 +86,21 @@ export class CastQuestDAO {
       throw new Error('Provider does not support writeContract; expected a viem wallet client.');
     }
 
-    // Normalize actions to bytes[]; if already encoded, pass through.
+    // Normalize actions to bytes[]; if already encoded, use it.
+    // Otherwise, throw an error as proper encoding should be done before calling this method.
     const encodedActions = actions.map((action) => {
+      // If action is already a hex string, use it directly
       if (typeof action === 'string') {
         return action;
       }
-      // For now, return empty bytes for actions that need encoding
-      // In production, this should properly encode the action data
-      return '0x';
+      // If action has pre-encoded data, use it
+      if (action.encoded) {
+        return action.encoded;
+      }
+      // For actions without encoded data, this is an error - encoding should happen externally
+      throw new Error(
+        'Proposal action must be pre-encoded. Use viem\'s encodeFunctionData to encode actions before passing them to createProposal.'
+      );
     });
 
     const txHash = await this.provider.writeContract({
