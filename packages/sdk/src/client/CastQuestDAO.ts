@@ -3,7 +3,7 @@
  * Provides methods for interacting with the DAO smart contract
  */
 
-import type { WalletClient } from 'viem';
+import type { WalletClient, Chain, Account } from 'viem';
 import type { Abi } from 'viem';
 
 // Minimal ABI for the DAO contract methods we need.
@@ -47,19 +47,34 @@ export interface CreateProposalResult {
   proposalId: string;
 }
 
-export interface DAOAction {
-  target?: string;
+/**
+ * DAO action that will be encoded and included in a proposal.
+ * Can be either a pre-encoded hex string or an action object.
+ */
+export type DAOAction = `0x${string}` | {
+  target: string;
   value?: bigint;
   data?: string;
-}
+};
 
 export class CastQuestDAO {
   private contractAddress: string;
   private provider: WalletClient;
+  private account?: Account;
+  private chain?: Chain;
 
-  constructor(contractAddress: string, provider: WalletClient) {
+  constructor(
+    contractAddress: string,
+    provider: WalletClient,
+    options?: {
+      account?: Account;
+      chain?: Chain;
+    }
+  ) {
     this.contractAddress = contractAddress;
     this.provider = provider;
+    this.account = options?.account;
+    this.chain = options?.chain;
   }
 
   /**
@@ -67,6 +82,10 @@ export class CastQuestDAO {
    *
    * Returns the transaction hash as proposalId for tracking purposes.
    * The actual on-chain proposalId can be derived from events or a follow-up read call.
+   *
+   * @param title - The proposal title
+   * @param description - The proposal description
+   * @param actions - Array of encoded action bytes (as hex strings) or action objects
    */
   async createProposal(
     title: string,
@@ -77,14 +96,17 @@ export class CastQuestDAO {
       throw new Error('Provider does not support writeContract; expected a viem wallet client.');
     }
 
-    // Normalize actions to bytes[]; if already encoded, pass through.
-    const encodedActions = actions.map((action) => {
+    // Normalize actions to bytes[]. Actions can be pre-encoded hex strings or will be
+    // encoded as empty bytes for placeholder. In production, action objects should be
+    // properly ABI-encoded according to the target contract's interface.
+    const encodedActions = actions.map((action): `0x${string}` => {
       if (typeof action === 'string') {
-        return action as `0x${string}`;
+        return action;
       }
-      // For now, return empty bytes for non-string actions
-      // In a real implementation, this would encode the action properly
-      return '0x' as `0x${string}`;
+      // For action objects, a proper implementation would ABI-encode the target,
+      // value, and data into a bytes array. For now, return empty bytes as placeholder.
+      // TODO: Implement proper action encoding based on DAO contract specification
+      return '0x';
     });
 
     const txHash = await this.provider.writeContract({
@@ -92,8 +114,8 @@ export class CastQuestDAO {
       abi: CAST_QUEST_DAO_ABI,
       functionName: 'createProposal',
       args: [title, description, encodedActions],
-      account: null,
-      chain: null,
+      account: this.account ?? null,
+      chain: this.chain ?? null,
     });
 
     return { proposalId: txHash };
@@ -114,8 +136,8 @@ export class CastQuestDAO {
       abi: CAST_QUEST_DAO_ABI,
       functionName: 'castVote',
       args: [BigInt(proposalId), support],
-      account: null,
-      chain: null,
+      account: this.account ?? null,
+      chain: this.chain ?? null,
     });
 
     return txHash;
@@ -136,8 +158,8 @@ export class CastQuestDAO {
       abi: CAST_QUEST_DAO_ABI,
       functionName: 'execute',
       args: [BigInt(proposalId)],
-      account: null,
-      chain: null,
+      account: this.account ?? null,
+      chain: this.chain ?? null,
     });
 
     return txHash;

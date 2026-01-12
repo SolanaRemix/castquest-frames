@@ -30,16 +30,29 @@ export interface FrameConfig {
   category: string;
   thumbnailUrl?: string;
   price?: string;
-  templateData: any;
+  templateData: Record<string, unknown>;
   version?: string;
+}
+
+export interface QuestRewards {
+  tokens?: number;
+  badges?: string[];
+  experience?: number;
+  [key: string]: unknown;
+}
+
+export interface QuestRequirements {
+  level?: number;
+  completedQuests?: string[];
+  [key: string]: unknown;
 }
 
 export interface QuestData {
   title: string;
   description: string;
   type: string;
-  rewards?: any;
-  requirements?: any;
+  rewards?: QuestRewards;
+  requirements?: QuestRequirements;
 }
 
 export class CastQuestSDK {
