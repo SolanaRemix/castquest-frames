@@ -27,6 +27,8 @@
  */
 
 export { FramesClient } from './client/FramesClient';
+export { CastQuestClient } from './client/CastQuestClient';
+export { DAOClient } from './client/DAOClient';
 export * from './types/frames';
 export * from './schema/validator';
 export * from './permissions/PermissionsService';
