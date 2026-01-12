@@ -8,6 +8,27 @@
 // Type for fetch that works in both Node.js and browser environments
 type FetchFunction = typeof globalThis.fetch;
 
+export interface FrameConfig {
+  name: string;
+  description?: string;
+  category: string;
+  thumbnailUrl?: string;
+  price?: number;
+  templateData: any;
+  version?: string;
+  tenantId?: string;
+}
+
+export interface QuestData {
+  title: string;
+  description: string;
+  category?: string;
+  difficulty?: string;
+  rewards?: any;
+  steps?: any[];
+  metadata?: any;
+}
+
 export interface CastQuestClientConfig {
   apiUrl: string;
   contractAddress?: string;
@@ -89,7 +110,7 @@ export class CastQuestClient {
   /**
    * Create a new frame
    */
-  async createFrame(config: any): Promise<FrameResponse> {
+  async createFrame(config: FrameConfig): Promise<FrameResponse> {
     const response = await this.fetchFn(`${this.apiUrl}/frames`, {
       method: 'POST',
       headers: {
@@ -122,7 +143,7 @@ export class CastQuestClient {
   /**
    * Create a new quest
    */
-  async createQuest(questData: any): Promise<QuestResponse> {
+  async createQuest(questData: QuestData): Promise<QuestResponse> {
     const response = await this.fetchFn(`${this.apiUrl}/quests`, {
       method: 'POST',
       headers: {

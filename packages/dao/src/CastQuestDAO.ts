@@ -6,7 +6,6 @@
  */
 
 import type { WalletClient, PublicClient, Address, Hex } from 'viem';
-import { encodeFunctionData } from 'viem';
 
 /**
  * Minimal ABI for the DAO contract methods we need.
@@ -87,14 +86,9 @@ export class CastQuestDAO {
       throw new Error('Wallet client does not support writeContract');
     }
 
-    // Encode actions to bytes[]
-    const encodedActions = actions.map((action) => {
-      return encodeFunctionData({
-        abi: [],
-        functionName: 'execute' as any,
-        args: [],
-      });
-    });
+    // Encode actions - each action already has its encoded data
+    // We just need to pass them as bytes[] to the contract
+    const encodedActions = actions.map((action) => action.data);
 
     const txHash = await this.walletClient.writeContract({
       address: this.contractAddress,

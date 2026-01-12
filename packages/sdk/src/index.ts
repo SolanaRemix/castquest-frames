@@ -33,6 +33,8 @@ export type {
   ProposalResponse,
   FrameResponse,
   QuestResponse,
+  FrameConfig,
+  QuestData,
 } from './client/CastQuestClient';
 export * from './types/frames';
 export * from './schema/validator';
