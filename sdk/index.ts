@@ -1,34 +1,12 @@
 ﻿/**
- * CastQuest SDK - Expanded
- * PR #6 - SDK Expansion
+ * CastQuest SDK re-export
+ *
+ * This file is a thin façade that forwards all imports to the
+ * canonical SDK package located in `packages/sdk/`.
+ *
+ * New SDK functionality should be implemented in `packages/sdk/src/`
+ * and exported from there, not from this file.
  */
 
-export class CastQuestSDK {
-  private apiUrl: string;
-  private contractAddress?:  string;
-  private daoAddress?: string;
-  
-  constructor(config: {
-    apiUrl: string;
-    contractAddress?:  string;
-    daoAddress?:  string;
-  }) {
-    this.apiUrl = config.apiUrl;
-    this.contractAddress = config.contractAddress;
-    this.daoAddress = config. daoAddress;
-  }
-
-  async createProposal(title: string, description: string) {
-    return { success: true, proposalId: '...' };
-  }
-
-  async createFrame(config: any) {
-    return { success:  true, frameId: '...' };
-  }
-
-  async createQuest(questData: any) {
-    return { success: true, questId: '...' };
-  }
-}
-
-export default CastQuestSDK;
+export * from '@castquest/sdk';
+export { default } from '@castquest/sdk';

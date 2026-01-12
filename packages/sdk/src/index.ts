@@ -27,6 +27,8 @@
  */
 
 export { FramesClient } from './client/FramesClient';
+export { CastQuestSDK } from './client/CastQuestSDK';
+export { CastQuestDAO } from './client/CastQuestDAO';
 export * from './types/frames';
 export * from './schema/validator';
 export * from './permissions/PermissionsService';
