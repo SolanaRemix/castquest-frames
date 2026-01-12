@@ -142,6 +142,11 @@ export class FramesService {
    * Rate a template
    */
   async rateTemplate(id: string, rating: number) {
+    // Validate rating is a valid number
+    if (typeof rating !== 'number' || isNaN(rating)) {
+      throw new Error('Rating must be a valid number');
+    }
+    
     if (rating < 1 || rating > 5) {
       throw new Error('Rating must be between 1 and 5');
     }

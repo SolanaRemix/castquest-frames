@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to list quests',
+        error: 'Failed to list quests',
       },
       { status: 500 }
     );
@@ -45,7 +45,32 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
+    // Admin authentication check
+    const adminToken = process.env.ADMIN_API_TOKEN;
+    const providedToken = request.headers.get('x-admin-token');
+
+    if (!adminToken || !providedToken || providedToken !== adminToken) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Unauthorized: Admin access required',
+        },
+        { status: 403 }
+      );
+    }
+    
     const body = await request.json();
+    
+    // Validate required fields
+    if (!body.title || !body.difficulty || !body.category || !body.rewardType || !body.requirementType || !body.requirementData) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Missing required fields: title, difficulty, category, rewardType, requirementType, or requirementData',
+        },
+        { status: 400 }
+      );
+    }
 
     const quest = await questsService.createQuest({
       title: body.title,
@@ -70,7 +95,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to create quest',
+        error: 'Failed to create quest',
       },
       { status: 500 }
     );

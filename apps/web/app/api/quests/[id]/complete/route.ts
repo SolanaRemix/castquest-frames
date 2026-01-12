@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { QuestsService } from '@castquest/core-services';
+import { requireAuth } from '../../../../lib/auth';
 
 const questsService = new QuestsService();
 
@@ -11,10 +12,13 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    const body = await request.json();
+    // Require authentication
+    const authResult = await requireAuth(request);
+    if ('error' in authResult) {
+      return NextResponse.json(authResult.error, { status: 401 });
+    }
     
-    // TODO: Get authenticated user ID from session/token
-    const userId = body.userId || 'temp-user-id';
+    const { userId } = authResult;
 
     const result = await questsService.completeQuest(params.id, userId);
 

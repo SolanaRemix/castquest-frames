@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { quests, questProgress, users } from '@/lib/db/schema';
+import { quests, questProgress } from '@/lib/db/schema';
 import { logger } from '@/lib/logger';
 import { eq, and, desc, sql } from 'drizzle-orm';
 
@@ -153,6 +153,15 @@ export class QuestsService {
    * Update quest progress for a user
    */
   async updateProgress(questId: string, userId: string, progressValue: number, progressData?: string) {
+    // Validate progress value is within valid range
+    if (typeof progressValue !== 'number' || isNaN(progressValue)) {
+      throw new Error('Progress value must be a valid number');
+    }
+    
+    if (progressValue < 0 || progressValue > 100) {
+      throw new Error('Progress value must be between 0 and 100');
+    }
+    
     const [updated] = await db.update(questProgress)
       .set({
         progress: progressValue,
@@ -243,7 +252,6 @@ export class QuestsService {
     // Get user's progress - returns array
     const userProgressData = await this.getUserProgress(userId);
     const userProgress = Array.isArray(userProgressData) ? userProgressData : [];
-    const userQuestIds = new Set(userProgress.map((p: any) => p.questId));
 
     // Filter out completed quests
     return allQuests.filter(quest => {

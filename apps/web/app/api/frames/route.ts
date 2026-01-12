@@ -42,15 +42,36 @@ export async function GET(request: NextRequest) {
   }
 }
 
+import { NextRequest, NextResponse } from 'next/server';
+import { FramesService } from '@castquest/core-services';
+import { requireAuth } from '../../../lib/auth';
+
+const framesService = new FramesService();
+
 /**
  * POST /api/frames - Create a new frame template
  */
 export async function POST(request: NextRequest) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request);
+    if ('error' in authResult) {
+      return NextResponse.json(authResult.error, { status: 401 });
+    }
+    
+    const { userId } = authResult;
     const body = await request.json();
     
-    // TODO: Get authenticated user ID from session/token
-    const userId = body.creatorId || 'temp-user-id';
+    // Validate required fields
+    if (!body.name || !body.category || !body.templateData) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Missing required fields: name, category, or templateData',
+        },
+        { status: 400 }
+      );
+    }
 
     const template = await framesService.createTemplate({
       name: body.name,
@@ -73,7 +94,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to create frame',
+        error: 'Failed to create frame',
       },
       { status: 500 }
     );

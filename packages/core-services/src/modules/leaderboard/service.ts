@@ -1,5 +1,5 @@
 import { db } from '@/lib/db';
-import { leaderboardEntries, users } from '@/lib/db/schema';
+import { leaderboardEntries } from '@/lib/db/schema';
 import { logger } from '@/lib/logger';
 import { eq, and, desc, sql, count } from 'drizzle-orm';
 
@@ -101,7 +101,7 @@ export class LeaderboardService {
         eq(leaderboardEntries.leaderboardType, leaderboardType),
         eq(leaderboardEntries.period, period)
       ),
-      orderBy: [desc(leaderboardEntries.rank)],
+      orderBy: [leaderboardEntries.rank], // Ascending order: rank 1 first
       limit,
       offset,
     });
@@ -167,7 +167,7 @@ export class LeaderboardService {
         sql`${leaderboardEntries.rank} >= ${targetRank - range}`,
         sql`${leaderboardEntries.rank} <= ${targetRank + range}`
       ),
-      orderBy: [desc(leaderboardEntries.rank)],
+      orderBy: [leaderboardEntries.rank], // Ascending order for proper leaderboard display
     });
 
     return entries;

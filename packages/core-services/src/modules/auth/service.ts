@@ -1,38 +1,80 @@
 import { db } from '@/lib/db';
-import { users } from '@/lib/db/schema';
+import { users, wallets } from '@/lib/db/schema';
 import { logger } from '@/lib/logger';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import jwt from 'jsonwebtoken';
 
 export class AuthService {
-  private readonly JWT_SECRET = process.env.JWT_SECRET || 'castquest-dev-secret';
+  private readonly JWT_SECRET: string;
   private readonly JWT_EXPIRES_IN = '7d';
+
+  constructor() {
+    const secret = process.env.JWT_SECRET;
+
+    if (!secret) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('JWT_SECRET environment variable must be set in production');
+      }
+
+      logger.warn('Using insecure default JWT secret in non-production environment');
+      this.JWT_SECRET = 'castquest-dev-secret';
+    } else {
+      this.JWT_SECRET = secret;
+    }
+  }
 
   /**
    * Authenticate user with wallet address
    */
   async authenticateWallet(address: string) {
-    // Check if user exists
-    let user = await db.query.users.findFirst({
-      where: eq(users.email, address.toLowerCase()),
+    const normalizedAddress = address.toLowerCase();
+    
+    // Check if wallet exists
+    let wallet = await db.query.wallets.findFirst({
+      where: eq(wallets.address, normalizedAddress),
     });
 
-    if (!user) {
-      // Create new user for this wallet
+    let user;
+    
+    if (!wallet) {
+      // Create new user and wallet
       const [newUser] = await db.insert(users).values({
-        email: address.toLowerCase(),
-        emailVerified: true, // Auto-verify wallet addresses
+        email: `${normalizedAddress}@wallet.castquest.xyz`, // Generate email for wallet users
+        emailVerified: true,
         status: 'active',
       }).returning();
       
       user = newUser;
+      
+      // Create wallet entry
+      await db.insert(wallets).values({
+        userId: user.id,
+        address: normalizedAddress,
+        type: 'eoa',
+        label: 'Primary Wallet',
+        isPrimary: true,
+      });
+      
       logger.info(`New wallet user created: ${address}`);
+    } else {
+      // Get existing user
+      user = await db.query.users.findFirst({
+        where: eq(users.id, wallet.userId),
+      });
+      
+      if (!user) {
+        throw new Error('User not found for wallet');
+      }
     }
 
-    // Update last login
+    // Update last login and wallet last used
     await db.update(users)
       .set({ lastLoginAt: new Date() })
       .where(eq(users.id, user.id));
+      
+    await db.update(wallets)
+      .set({ lastUsedAt: new Date() })
+      .where(eq(wallets.address, normalizedAddress));
 
     // Generate JWT
     const token = this.generateToken(user.id, user.email);
@@ -40,6 +82,7 @@ export class AuthService {
     return {
       user: this.sanitizeUser(user),
       token,
+      walletAddress: normalizedAddress,
     };
   }
 

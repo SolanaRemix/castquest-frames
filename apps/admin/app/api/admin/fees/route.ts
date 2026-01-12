@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAdmin } from '../../../../lib/auth';
 
 /**
  * GET /api/admin/fees - Get protocol fee configuration
  */
 export async function GET(request: NextRequest) {
   try {
+    // Admin authentication check
+    const authCheck = requireAdmin(request);
+    if (!authCheck.authorized) {
+      return NextResponse.json(authCheck.error, { status: 403 });
+    }
+    
     // TODO: Store fees in database configuration table
     
     const fees = {
@@ -37,7 +44,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to get fees',
+        error: 'Failed to get fees',
       },
       { status: 500 }
     );
@@ -49,10 +56,29 @@ export async function GET(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
+    // Admin authentication check
+    const authCheck = requireAdmin(request);
+    if (!authCheck.authorized) {
+      return NextResponse.json(authCheck.error, { status: 403 });
+    }
+    
     const body = await request.json();
     
+    // Validate fee values
+    if (body.protocolFee?.percentage !== undefined) {
+      const pct = parseFloat(body.protocolFee.percentage);
+      if (isNaN(pct) || pct < 0 || pct > 100) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid protocol fee percentage',
+          },
+          { status: 400 }
+        );
+      }
+    }
+    
     // TODO: Validate and store fee updates in database
-    // Add proper admin authentication
     
     return NextResponse.json({
       success: true,
@@ -64,7 +90,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to update fees',
+        error: 'Failed to update fees',
       },
       { status: 500 }
     );

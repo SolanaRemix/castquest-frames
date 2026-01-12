@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FramesService } from '@castquest/core-services';
+import { requireAuth } from '../../../lib/auth';
 
 const framesService = new FramesService();
 
@@ -32,7 +33,7 @@ export async function GET(
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to get frame',
+        error: 'Failed to get frame',
       },
       { status: 500 }
     );
@@ -47,6 +48,37 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request);
+    if ('error' in authResult) {
+      return NextResponse.json(authResult.error, { status: 401 });
+    }
+    
+    const { userId } = authResult;
+    
+    // Verify ownership
+    const template = await framesService.getTemplateById(params.id);
+    
+    if (!template) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Frame template not found',
+        },
+        { status: 404 }
+      );
+    }
+    
+    if ((template as any).creatorId !== userId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'You do not have permission to update this frame template',
+        },
+        { status: 403 }
+      );
+    }
+    
     const body = await request.json();
 
     const updateData: any = {};
@@ -61,18 +93,18 @@ export async function PUT(
     if (body.status !== undefined) updateData.status = body.status;
     if (body.featured !== undefined) updateData.featured = body.featured;
 
-    const template = await framesService.updateTemplate(params.id, updateData);
+    const updated = await framesService.updateTemplate(params.id, updateData);
 
     return NextResponse.json({
       success: true,
-      data: template,
+      data: updated,
     });
   } catch (error: any) {
     console.error('Error updating frame:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to update frame',
+        error: 'Failed to update frame',
       },
       { status: 500 }
     );
@@ -87,6 +119,37 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Require authentication
+    const authResult = await requireAuth(request);
+    if ('error' in authResult) {
+      return NextResponse.json(authResult.error, { status: 401 });
+    }
+    
+    const { userId } = authResult;
+    
+    // Verify ownership
+    const template = await framesService.getTemplateById(params.id);
+    
+    if (!template) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Frame template not found',
+        },
+        { status: 404 }
+      );
+    }
+    
+    if ((template as any).creatorId !== userId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'You do not have permission to delete this frame template',
+        },
+        { status: 403 }
+      );
+    }
+    
     await framesService.deleteTemplate(params.id);
 
     return NextResponse.json({
@@ -98,7 +161,7 @@ export async function DELETE(
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to delete frame',
+        error: 'Failed to delete frame',
       },
       { status: 500 }
     );

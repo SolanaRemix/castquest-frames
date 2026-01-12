@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { QuestsService } from '@castquest/core-services';
+import { requireAuth } from '../../../../lib/auth';
 
 const questsService = new QuestsService();
 
@@ -11,9 +12,13 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    // TODO: Get authenticated user ID from session/token
-    const userId = searchParams.get('userId') || 'temp-user-id';
+    // Require authentication
+    const authResult = await requireAuth(request);
+    if ('error' in authResult) {
+      return NextResponse.json(authResult.error, { status: 401 });
+    }
+    
+    const { userId } = authResult;
 
     const progress = await questsService.getUserProgress(userId, params.id);
 
@@ -26,7 +31,7 @@ export async function GET(
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to get quest progress',
+        error: 'Failed to get quest progress',
       },
       { status: 500 }
     );

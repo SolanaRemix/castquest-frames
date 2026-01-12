@@ -1,14 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { UserService } from '@castquest/core-services';
-
-const userService = new UserService();
+import { requireAdmin } from '../../../../lib/auth';
 
 /**
  * GET /api/admin/users - List all users (admin only)
  */
 export async function GET(request: NextRequest) {
   try {
-    // TODO: Add admin authentication check
+    // Admin authentication check
+    const authCheck = requireAdmin(request);
+    if (!authCheck.authorized) {
+      return NextResponse.json(authCheck.error, { status: 403 });
+    }
     
     // For now, return mock data as we don't have a list method in UserService
     // In production, add pagination to UserService
@@ -42,7 +44,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(
       {
         success: false,
-        error: error.message || 'Failed to list users',
+        error: 'Failed to list users',
       },
       { status: 500 }
     );

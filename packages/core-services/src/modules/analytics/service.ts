@@ -1,7 +1,7 @@
 import { db } from '@/lib/db';
 import { analyticsEvents, users, frameTemplates } from '@/lib/db/schema';
 import { logger } from '@/lib/logger';
-import { eq, and, desc, sql, gte, lte, count } from 'drizzle-orm';
+import { eq, and, desc, sql, gte, count } from 'drizzle-orm';
 
 export class AnalyticsService {
   /**
