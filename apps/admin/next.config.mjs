@@ -2,6 +2,14 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@castquest/neo-ux-core'],
+  images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**',
+      },
+    ],
+  },
   experimental: {
     serverComponentsExternalPackages: ['@castquest/core-services', 'bcrypt', '@mapbox/node-pre-gyp'],
   },
