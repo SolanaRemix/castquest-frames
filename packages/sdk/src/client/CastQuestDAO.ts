@@ -83,8 +83,8 @@ export class CastQuestDAO {
   /**
    * Create a new proposal on-chain.
    * 
-   * Returns the transaction hash as proposalId for tracking purposes.
-   * The actual on-chain proposalId can be derived from events or a follow-up read call.
+   * Returns the transaction hash for tracking purposes.
+   * The actual on-chain proposalId can be derived from transaction events.
    */
   async createProposal(
     title: string,
@@ -117,7 +117,7 @@ export class CastQuestDAO {
       chain: this.walletClient.chain,
     });
 
-    return { proposalId: txHash };
+    return { transactionHash: txHash };
   }
 
   /**
@@ -134,11 +134,19 @@ export class CastQuestDAO {
       throw new Error('WalletClient must have an account');
     }
 
+    // Validate and convert proposalId to BigInt
+    let proposalIdBigInt: bigint;
+    try {
+      proposalIdBigInt = BigInt(proposalId);
+    } catch (error) {
+      throw new Error(`Invalid proposal ID: ${proposalId}. Must be a valid number.`);
+    }
+
     const txHash = await this.walletClient.writeContract({
       address: this.contractAddress,
       abi: CAST_QUEST_DAO_ABI,
       functionName: 'castVote',
-      args: [BigInt(proposalId), support],
+      args: [proposalIdBigInt, support],
       account: this.walletClient.account,
       chain: this.walletClient.chain,
     });
@@ -160,11 +168,19 @@ export class CastQuestDAO {
       throw new Error('WalletClient must have an account');
     }
 
+    // Validate and convert proposalId to BigInt
+    let proposalIdBigInt: bigint;
+    try {
+      proposalIdBigInt = BigInt(proposalId);
+    } catch (error) {
+      throw new Error(`Invalid proposal ID: ${proposalId}. Must be a valid number.`);
+    }
+
     const txHash = await this.walletClient.writeContract({
       address: this.contractAddress,
       abi: CAST_QUEST_DAO_ABI,
       functionName: 'execute',
-      args: [BigInt(proposalId)],
+      args: [proposalIdBigInt],
       account: this.walletClient.account,
       chain: this.walletClient.chain,
     });
