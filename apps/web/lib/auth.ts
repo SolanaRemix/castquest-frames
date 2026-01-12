@@ -1,48 +1,32 @@
-import { NextRequest } from 'next/server';
-import { AuthService } from '@castquest/core-services';
+/**
+ * @packageDocumentation
+ * Auth compatibility module for the web app.
+ *
+ * This file serves as a backward compatibility layer around the newer, more
+ * modular `./auth/` implementation. It preserves existing import paths so that
+ * legacy code can continue to import from `apps/web/lib/auth` without change,
+ * while internally delegating all behavior to the modules in the `auth/`
+ * directory.
+ *
+ * - Re-exports all public auth utilities from the `./auth/` barrel module.
+ * - Explicitly re-exports {@link requireUserId} for historical named imports.
+ * - Provides {@link getUserIdFromRequest} as a deprecated alias for backward compatibility.
+ */
 
-const authService = new AuthService();
+// Re-export everything from the new auth module
+export * from './auth/';
+
+// Import specific functions for re-export and aliasing
+import { requireUserId, getUserId } from './auth/auth';
+
+// Specifically re-export requireUserId for direct import
+export { requireUserId, getUserId };
 
 /**
- * Extract and verify user ID from authentication token
+ * @deprecated Use `getUserId` instead.
+ * This wrapper is kept for backward compatibility and forwards to `getUserId`.
+ * The old function returned `Promise<string | null>` but was synchronous.
+ * New code should use `getUserId` directly which has the correct signature.
  */
-export async function getUserIdFromRequest(request: NextRequest): Promise<string | null> {
-  try {
-    // Try to get token from Authorization header
-    const authHeader = request.headers.get('authorization');
-    
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return null;
-    }
-    
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-    const decoded = authService.verifyToken(token);
-    
-    if (!decoded) {
-      return null;
-    }
-    
-    return decoded.userId;
-  } catch (error) {
-    console.error('Error extracting user ID from request:', error);
-    return null;
-  }
-}
+export const getUserIdFromRequest = getUserId;
 
-/**
- * Require authentication or return 401 error
- */
-export async function requireAuth(request: NextRequest): Promise<{ userId: string } | { error: any }> {
-  const userId = await getUserIdFromRequest(request);
-  
-  if (!userId) {
-    return {
-      error: {
-        success: false,
-        error: 'Unauthorized: Authentication required',
-      },
-    };
-  }
-  
-  return { userId };
-}
