@@ -70,7 +70,11 @@ export class CastQuestClient {
     this.daoAddress = config.daoAddress;
     this.apiKey = config.apiKey;
     // Use provided fetch or global fetch
-    this.fetchFn = config.fetch || (globalThis as any).fetch;
+    this.fetchFn = config.fetch || (globalThis.fetch as FetchFunction);
+    
+    if (!this.fetchFn) {
+      throw new Error('Fetch is not available. Please provide a fetch implementation in the config.');
+    }
   }
 
   /**
