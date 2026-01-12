@@ -91,7 +91,7 @@ export class AuthService {
    */
   verifyToken(token: string): { userId: string; email: string } | null {
     try {
-      const decoded = jwt.verify(token, this.JWT_SECRET) as any;
+      const decoded = jwt.verify(token, this.JWT_SECRET) as { userId: string; email: string };
       return {
         userId: decoded.userId,
         email: decoded.email,
