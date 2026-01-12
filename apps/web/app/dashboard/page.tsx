@@ -569,7 +569,6 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between mt-4">
                   <div className="flex gap-2">
                     <button className="px-4 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 transition-all flex items-center gap-2">
-                      {/* eslint-disable-next-line jsx-a11y/alt-text */}
                       <Image className="w-4 h-4" />
                       Add Image
                     </button>
