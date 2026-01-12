@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FramesService } from '@castquest/core-services';
-import { requireAuth } from '../../../../lib/auth';
+import { requireUserId } from '@/lib/auth';
 
 const framesService = new FramesService();
 
@@ -12,6 +12,17 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    // Validate frame ID
+    if (!params.id || typeof params.id !== 'string') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid frame ID',
+        },
+        { status: 400 }
+      );
+    }
+
     const template = await framesService.getTemplateById(params.id);
 
     if (!template) {
@@ -33,7 +44,7 @@ export async function GET(
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to get frame',
+        error: error.message || 'Failed to get frame',
       },
       { status: 500 }
     );
@@ -48,13 +59,19 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Require authentication
-    const authResult = await requireAuth(request);
-    if ('error' in authResult) {
-      return NextResponse.json(authResult.error, { status: 401 });
+    // Validate frame ID
+    if (!params.id || typeof params.id !== 'string') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid frame ID',
+        },
+        { status: 400 }
+      );
     }
-    
-    const { userId } = authResult;
+
+    // Require authentication
+    const userId = await requireUserId(request);
     
     // Verify ownership
     const template = await framesService.getTemplateById(params.id);
@@ -100,11 +117,21 @@ export async function PUT(
       data: updated,
     });
   } catch (error: any) {
+    if (error.message?.includes('Unauthorized')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.message,
+        },
+        { status: 401 }
+      );
+    }
+
     console.error('Error updating frame:', error);
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to update frame',
+        error: error.message || 'Failed to update frame',
       },
       { status: 500 }
     );
@@ -119,13 +146,19 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Require authentication
-    const authResult = await requireAuth(request);
-    if ('error' in authResult) {
-      return NextResponse.json(authResult.error, { status: 401 });
+    // Validate frame ID
+    if (!params.id || typeof params.id !== 'string') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid frame ID',
+        },
+        { status: 400 }
+      );
     }
-    
-    const { userId } = authResult;
+
+    // Require authentication
+    const userId = await requireUserId(request);
     
     // Verify ownership
     const template = await framesService.getTemplateById(params.id);
@@ -157,11 +190,21 @@ export async function DELETE(
       message: 'Frame template deleted successfully',
     });
   } catch (error: any) {
+    if (error.message?.includes('Unauthorized')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.message,
+        },
+        { status: 401 }
+      );
+    }
+
     console.error('Error deleting frame:', error);
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to delete frame',
+        error: error.message || 'Failed to delete frame',
       },
       { status: 500 }
     );

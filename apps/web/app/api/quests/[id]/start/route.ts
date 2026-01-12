@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { QuestsService } from '@castquest/core-services';
-import { requireAuth } from '../../../../../lib/auth';
+import { requireUserId } from '@/lib/auth';
 
 const questsService = new QuestsService();
 
@@ -12,13 +12,19 @@ export async function POST(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Require authentication
-    const authResult = await requireAuth(request);
-    if ('error' in authResult) {
-      return NextResponse.json(authResult.error, { status: 401 });
+    // Validate quest ID
+    if (!params.id || typeof params.id !== 'string') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid quest ID',
+        },
+        { status: 400 }
+      );
     }
-    
-    const { userId } = authResult;
+
+    // Require authentication
+    const userId = await requireUserId(request);
 
     const progress = await questsService.startQuest(params.id, userId);
 
@@ -27,6 +33,16 @@ export async function POST(
       data: progress,
     });
   } catch (error: any) {
+    if (error.message?.includes('Unauthorized')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.message,
+        },
+        { status: 401 }
+      );
+    }
+
     console.error('Error starting quest:', error);
     return NextResponse.json(
       {

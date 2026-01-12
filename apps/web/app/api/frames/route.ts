@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { FramesService } from '@castquest/core-services';
-import { requireAuth } from '../../../lib/auth';
+import { requireUserId } from '@/lib/auth';
 
 const framesService = new FramesService();
 
@@ -49,12 +49,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Require authentication
-    const authResult = await requireAuth(request);
-    if ('error' in authResult) {
-      return NextResponse.json(authResult.error, { status: 401 });
-    }
-    
-    const { userId } = authResult;
+    const userId = await requireUserId(request);
     const body = await request.json();
     
     // Validate required fields
@@ -85,11 +80,21 @@ export async function POST(request: NextRequest) {
       data: template,
     }, { status: 201 });
   } catch (error: any) {
+    if (error.message?.includes('Unauthorized')) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: error.message,
+        },
+        { status: 401 }
+      );
+    }
+
     console.error('Error creating frame:', error);
     return NextResponse.json(
       {
         success: false,
-        error: 'Failed to create frame',
+        error: error.message || 'Failed to create frame',
       },
       { status: 500 }
     );
