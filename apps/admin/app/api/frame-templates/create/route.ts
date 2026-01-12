@@ -1,23 +1,52 @@
 import { NextResponse } from "next/server";
-import { loadFrameTemplates, saveFrameTemplates } from "../utils/fs-frame-templates";
+import { FramesService } from '@castquest/core-services';
+
+const framesService = new FramesService();
 
 export async function POST(req: Request) {
-  const body = await req.json();
-  const templates = loadFrameTemplates();
+  try {
+    const body = await req.json();
+    
+    // Validate required fields per core-services schema
+    if (!body.name || !body.category) {
+      return NextResponse.json(
+        { 
+          ok: false, 
+          error: 'Missing required fields: name and category are required' 
+        },
+        { status: 400 }
+      );
+    }
 
-  const id = "tmpl_" + Date.now().toString();
+    // Create template data matching the core-services schema
+    const templateData = {
+      primaryText: body.layout?.primaryText || '',
+      secondaryText: body.layout?.secondaryText || '',
+      cta: body.layout?.cta || { label: 'Mint', action: 'mint' },
+      baseMediaId: body.baseMediaId || null,
+    };
 
-  const template = {
-    id,
-    name: body.name,
-    description: body.description || "",
-    baseMediaId: body.baseMediaId || null,
-    layout: body.layout || {},
-    createdAt: new Date().toISOString()
-  };
+    const template = await framesService.createTemplate({
+      name: body.name,
+      description: body.description || '',
+      category: body.category || 'custom',
+      thumbnailUrl: body.thumbnailUrl,
+      price: body.price,
+      creatorId: body.creatorId || 'admin',  // Should come from auth
+      tenantId: body.tenantId,
+      templateData: JSON.stringify(templateData),
+      version: body.version || '1.0.0',
+    });
 
-  templates.push(template);
-  saveFrameTemplates(templates);
-
-  return NextResponse.json({ ok: true, template });
+    return NextResponse.json({ ok: true, template });
+  } catch (error) {
+    console.error('Failed to create frame template:', error);
+    return NextResponse.json(
+      { 
+        ok: false, 
+        error: 'Failed to create frame template' 
+      },
+      { status: 500 }
+    );
+  }
 }

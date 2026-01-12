@@ -1,9 +1,15 @@
 import { NextResponse } from "next/server";
-import { loadFrameTemplates } from "./utils/fs-frame-templates";
+import { FramesService } from '@castquest/core-services';
+
+const framesService = new FramesService();
 
 export async function GET() {
   try {
-    const templates = loadFrameTemplates();
+    const templates = await framesService.listTemplates({
+      limit: 100,
+      offset: 0,
+    });
+    
     return NextResponse.json({ 
       success: true, 
       data: templates 
