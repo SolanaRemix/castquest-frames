@@ -21,8 +21,24 @@ export interface FrameConfig {
   category: string;
   thumbnailUrl?: string;
   price?: string;
-  templateData: Record<string, any>;
+  templateData: Record<string, unknown>;
   version?: string;
+}
+
+export interface Reward {
+  type: string;
+  amount?: string;
+  tokenAddress?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface QuestStep {
+  id: string;
+  name: string;
+  description?: string;
+  type: string;
+  requirements?: Record<string, unknown>;
+  order: number;
 }
 
 export interface QuestData {
@@ -30,8 +46,8 @@ export interface QuestData {
   description?: string;
   category?: string;
   difficulty?: string;
-  rewards?: any[];
-  steps?: any[];
+  rewards?: Reward[];
+  steps?: QuestStep[];
 }
 
 export class CastQuestClient {

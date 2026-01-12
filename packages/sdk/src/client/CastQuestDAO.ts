@@ -44,6 +44,21 @@ const CAST_QUEST_DAO_ABI: Abi = [
   },
 ];
 
+// ABI for encoding individual proposal actions
+const ACTION_EXECUTE_ABI: Abi = [
+  {
+    type: 'function',
+    name: 'execute',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'target', type: 'address' },
+      { name: 'value', type: 'uint256' },
+      { name: 'data', type: 'bytes' },
+    ],
+    outputs: [],
+  },
+];
+
 export interface ProposalAction {
   target: string;
   value: bigint;
@@ -87,15 +102,7 @@ export class CastQuestDAO {
     // Encode actions to bytes[]
     const encodedActions = actions.map((action) => {
       return encodeFunctionData({
-        abi: [{
-          type: 'function',
-          name: 'execute',
-          inputs: [
-            { name: 'target', type: 'address' },
-            { name: 'value', type: 'uint256' },
-            { name: 'data', type: 'bytes' },
-          ],
-        }],
+        abi: ACTION_EXECUTE_ABI,
         functionName: 'execute',
         args: [action.target, action.value, action.data],
       });
