@@ -1,7 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { QuestsService } from '@castquest/core-services';
 
-const questsService = new QuestsService();
+// Lazy initialization to avoid build-time errors
+let questsService: QuestsService | null = null;
+
+function getQuestsService(): QuestsService {
+  if (!questsService) {
+    questsService = new QuestsService();
+  }
+  return questsService;
+}
 
 /**
  * GET /api/quests/[id] - Get quest details
@@ -22,7 +30,7 @@ export async function GET(
       );
     }
 
-    const quest = await questsService.getQuestById(params.id);
+    const quest = await getQuestsService().getQuestById(params.id);
 
     if (!quest) {
       return NextResponse.json(
