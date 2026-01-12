@@ -227,7 +227,13 @@ export default function QuestDetailPage({ params }: { params: { id: string } }) 
         <h2 className="text-xl font-bold text-white mb-4">Requirements</h2>
         <div className="bg-neutral-900 p-4 rounded overflow-auto max-h-64">
           <pre className="text-sm text-neutral-300 whitespace-pre-wrap font-mono">
-            {JSON.stringify(JSON.parse(quest.requirementData), null, 2)}
+            {(() => {
+              try {
+                return JSON.stringify(JSON.parse(quest.requirementData), null, 2);
+              } catch (error) {
+                return quest.requirementData;
+              }
+            })()}
           </pre>
         </div>
       </div>
