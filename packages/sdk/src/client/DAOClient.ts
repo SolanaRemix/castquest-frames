@@ -83,11 +83,14 @@ export class DAOClient {
     }
 
     // Encode actions to bytes[]
-    // Each action contains target, value, and calldata
-    // We encode them as packed bytes for the DAO contract
+    // Note: The DAO contract expects an array of encoded action bytes.
+    // Each action should be ABI-encoded with target, value, and data.
+    // For now, we pass the action.data directly as it should already be encoded calldata.
+    // TODO: In production, this should encode the full action struct including target and value.
+    // The smart contract should decode: (address target, uint256 value, bytes data) from each bytes element.
     const encodedActions = actions.map((action) => {
-      // For now, we pass the action.data directly as it should already be encoded calldata
-      // If action.data is empty, we use '0x' (empty bytes)
+      // If a complete encoding is needed, it should be done before calling this method
+      // and passed in action.data. Otherwise, we use the data field directly.
       return action.data || '0x';
     });
 

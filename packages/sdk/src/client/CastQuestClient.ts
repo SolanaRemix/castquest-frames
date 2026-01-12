@@ -22,7 +22,7 @@ export interface FrameConfig {
   category: string;
   thumbnailUrl?: string;
   price?: number;
-  templateData: any;
+  templateData: Record<string, unknown>; // Changed from any to generic object type
   version?: string;
 }
 
@@ -30,7 +30,7 @@ export interface QuestData {
   title: string;
   description: string;
   rewardAmount?: number;
-  criteria?: any;
+  criteria?: Record<string, unknown>; // Changed from any to generic object type
 }
 
 export class CastQuestClient {
