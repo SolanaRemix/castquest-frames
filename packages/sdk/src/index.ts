@@ -1,4 +1,4 @@
-import fetch, { HeadersInit } from "cross-fetch";
+import fetch from "cross-fetch";
 import { AiJob, FrameTemplate, Project, User, Tenant } from "./generated/types";
 
 export interface ClientOptions {
@@ -128,4 +128,3 @@ class AuthenticatedClient {
   }
 }
 
-export { CastQuestClient, AuthenticatedClient, User, Tenant, AiJob, FrameTemplate, Project };
