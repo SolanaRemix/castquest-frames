@@ -23,8 +23,8 @@ export class CastQuestClient {
       "Content-Type": "application/json",
       ...extra,
     };
-    if (this.apiKey) h["X-API-Key"] = this.apiKey;
-    if (auth) h["Authorization"] = `Bearer ${auth}`;
+    if (this.apiKey) (h as any)["X-API-Key"] = this.apiKey;
+    if (auth) (h as any)["Authorization"] = `Bearer ${auth}`;
     return h;
   }
 
