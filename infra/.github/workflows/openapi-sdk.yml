@@ -1,0 +1,27 @@
+name: OpenAPI Lint & SDK Build
+on:
+  pull_request:
+    paths:
+      - 'infra/openapi/**'
+      - 'packages/sdk/**'
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install deps
+        run: |
+          cd packages/sdk
+          npm ci
+      - name: Build SDK
+        run: |
+          cd packages/sdk
+          npm run build
+      - name: Lint OpenAPI (optional)
+        run: |
+          if ! command -v @readme/openapi-cli >/dev/null 2>&1; then npm i -g @readme/openapi-cli; fi
+          openapi validate infra/openapi/castquest-full-openapi.yaml || true
