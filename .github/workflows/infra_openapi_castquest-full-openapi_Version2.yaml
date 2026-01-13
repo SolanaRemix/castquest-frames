@@ -1,0 +1,1598 @@
+openapi: "3.0.3"
+info:
+  title: CastQuest - Full API (expanded)
+  version: "1.0.0"
+  description: |
+    Expanded OpenAPI 3.0.3 specification for CastQuest microservices.
+    Covers auth, projects, frames, ai, market, quests, social, admin, analytics, dev-api, agents, shipments, billing.
+    Use this file as the source of truth to generate SDKs and docs.
+servers:
+  - url: https://api.castquest.io
+    description: Production
+  - url: http://localhost:8080
+    description: Local api-gateway
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: auth
+    description: Authentication, sessions and API keys
+  - name: projects
+    description: Projects, files and previews
+  - name: frames
+    description: Frame templates, versions, Farcaster integration, timelines
+  - name: ai
+    description: AI orchestrator and jobs
+  - name: market
+    description: Marketplace listings & buy flows
+  - name: quests
+    description: Quests, achievements, leaderboard
+  - name: social
+    description: Feed, profiles, follows, likes
+  - name: admin
+    description: Admin-only endpoints and governance
+  - name: analytics
+    description: Dashboard & metrics
+  - name: dev-api
+    description: API portal, SDKs and pipelines
+  - name: agents
+    description: Agents lifecycle and configs
+  - name: shipments
+    description: Shipment / deployment flows
+  - name: billing
+    description: Subscriptions and invoices
+
+paths:
+  /auth/signup:
+    post:
+      tags: [auth]
+      summary: Sign up and create (or join) a tenant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthSignup'
+      responses:
+        '201':
+          description: Created - returns tokens and user
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/login/passwordless/request:
+    post:
+      tags: [auth]
+      summary: Request passwordless magic link
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email:
+                  type: string
+      responses:
+        '202':
+          description: Accepted (magic link sent)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/login/passwordless/verify:
+    post:
+      tags: [auth]
+      summary: Verify magic link and obtain tokens
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [token]
+              properties:
+                token:
+                  type: string
+      responses:
+        '200':
+          description: Tokens issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/me:
+    get:
+      tags: [auth]
+      summary: Get current authenticated user and tenant
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Current user and tenant
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user:
+                    $ref: '#/components/schemas/User'
+                  tenant:
+                    $ref: '#/components/schemas/Tenant'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/token/refresh:
+    post:
+      tags: [auth]
+      summary: Exchange refresh token for new access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [refreshToken]
+              properties:
+                refreshToken:
+                  type: string
+      responses:
+        '200':
+          description: New tokens
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTokenResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Revoke refresh token / logout
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Logged out
+
+  /auth/api-keys:
+    post:
+      tags: [auth]
+      summary: Create API key for tenant
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, scopes]
+              properties:
+                name: { type: string }
+                scopes:
+                  type: array
+                  items: { type: string }
+      responses:
+        '201':
+          description: API key created - plaintext secret returned once
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyCreateResponse'
+    get:
+      tags: [auth]
+      summary: List API keys
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of API keys
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ApiKey'
+
+  /projects:
+    get:
+      tags: [projects]
+      summary: List tenant projects
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: Projects page
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedProjects'
+    post:
+      tags: [projects]
+      summary: Create a new project
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectCreate'
+      responses:
+        '201':
+          description: Created project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+
+  /projects/{projectId}:
+    get:
+      tags: [projects]
+      summary: Get project by id
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Project object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [projects]
+      summary: Update project
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectUpdate'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Project'
+
+  /projects/{projectId}/files:
+    get:
+      tags: [projects]
+      summary: List files under project path or tree
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: path
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Files array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/File'
+    post:
+      tags: [projects]
+      summary: Create a file or directory
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileCreate'
+      responses:
+        '201':
+          description: File created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+
+  /projects/{projectId}/files/{fileId}:
+    get:
+      tags: [projects]
+      summary: Get file content by id
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: fileId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: File object
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [projects]
+      summary: Update file content or path
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+        - name: fileId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FileUpdate'
+      responses:
+        '200':
+          description: Updated file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/File'
+
+  /projects/{projectId}/preview/build:
+    post:
+      tags: [projects]
+      summary: Trigger preview build (emit event)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                branch: { type: string }
+                commitId: { type: string }
+      responses:
+        '202':
+          description: Build queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  previewId: { type: string, format: uuid }
+                  status: { type: string, example: "queued" }
+
+  /frames/templates:
+    get:
+      tags: [frames]
+      summary: List frame templates
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: creatorId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: search
+          in: query
+          schema: { type: string }
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: isPublic
+          in: query
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Templates list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedFrameTemplates'
+    post:
+      tags: [frames]
+      summary: Create a new frame template
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FrameTemplateCreate'
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrameTemplate'
+
+  /frames/templates/{templateId}:
+    get:
+      tags: [frames]
+      summary: Get frame template
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Template
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrameTemplate'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags: [frames]
+      summary: Update template metadata
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FrameTemplateUpdate'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrameTemplate'
+    delete:
+      tags: [frames]
+      summary: Delete a template
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Deleted
+
+  /frames/templates/{templateId}/versions:
+    get:
+      tags: [frames]
+      summary: List versions for a template
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Versions array
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FrameTemplateVersion'
+    post:
+      tags: [frames]
+      summary: Create a new template version
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FrameTemplateVersionCreate'
+      responses:
+        '201':
+          description: Version created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrameTemplateVersion'
+
+  /frames/templates/{templateId}/deploy:
+    post:
+      tags: [frames]
+      summary: Deploy a template version (async) — emits frame.deploy.request
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [versionId]
+              properties:
+                versionId: { type: string, format: uuid }
+                network: { type: string }
+                farcasterConfig: { type: object }
+                notes: { type: string }
+      responses:
+        '202':
+          description: Deploy queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  requestId: { type: string, format: uuid }
+                  status: { type: string, example: "queued" }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /frames/templates/{templateId}/revert:
+    post:
+      tags: [frames]
+      summary: Revert template to a target version (creates timeline entry)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: templateId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [targetVersionId]
+              properties:
+                targetVersionId: { type: string, format: uuid }
+                reason: { type: string }
+      responses:
+        '200':
+          description: Revert accepted, timeline updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FrameTimeline'
+
+  /ai/jobs:
+    post:
+      tags: [ai]
+      summary: Create AI job (queued)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiJobCreate'
+      responses:
+        '201':
+          description: Job created (queued)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiJob'
+    get:
+      tags: [ai]
+      summary: List AI jobs (filterable)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: Jobs page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AiJob'
+                  total: { type: integer }
+
+  /ai/jobs/{jobId}:
+    get:
+      tags: [ai]
+      summary: Get AI job by id
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: jobId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: AI job
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiJob'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /market/listings:
+    get:
+      tags: [market]
+      summary: Browse marketplace listings
+      parameters:
+        - name: category
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: offset
+          in: query
+          schema: { type: integer, default: 0 }
+      responses:
+        '200':
+          description: Listings page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MarketListing'
+                  total:
+                    type: integer
+    post:
+      tags: [market]
+      summary: Create a marketplace listing
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MarketListingCreate'
+      responses:
+        '201':
+          description: Listing created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketListing'
+
+  /market/listings/{id}/buy:
+    post:
+      tags: [market]
+      summary: Initiate buy flow (returns contract payloads)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Buy flow payloads
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  contractCallPayload:
+                    type: object
+                  orderId:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /quests/active:
+    get:
+      tags: [quests]
+      summary: List active quests
+      responses:
+        '200':
+          description: Active quests
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Quest'
+
+  /quests/{questId}/claim:
+    post:
+      tags: [quests]
+      summary: Claim quest reward (if eligible)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: questId
+          in: path
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Claimed (awarded)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  awarded: { type: boolean }
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /social/feed:
+    get:
+      tags: [social]
+      summary: Get global or personalized feed
+      parameters:
+        - name: cursor
+          in: query
+          schema: { type: string }
+        - name: followingOnly
+          in: query
+          schema: { type: boolean }
+      responses:
+        '200':
+          description: Feed page
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items: { $ref: '#/components/schemas/FeedItem' }
+                  nextCursor: { type: string }
+
+  /profiles/{handle}:
+    get:
+      tags: [social]
+      summary: Get profile by handle
+      parameters:
+        - name: handle
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Profile + summary
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  user: { $ref: '#/components/schemas/User' }
+                  framesCount: { type: integer }
+                  followersCount: { type: integer }
+                  followingCount: { type: integer }
+
+  /admin/tenants:
+    get:
+      tags: [admin]
+      summary: List tenants (admin only)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tenants list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tenant'
+
+  /admin/audit-logs:
+    get:
+      tags: [admin]
+      summary: Search audit logs
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: tenantId
+          in: query
+          schema: { type: string, format: uuid }
+        - name: action
+          in: query
+          schema: { type: string }
+        - name: entityType
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 50 }
+      responses:
+        '200':
+          description: Audit logs page
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuditLog'
+
+  /analytics/overview:
+    get:
+      tags: [analytics]
+      summary: Overview metrics for dashboards
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Overview metrics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsOverview'
+
+  /dev-api/docs:
+    get:
+      tags: [dev-api]
+      summary: List available OpenAPI specs & docs
+      responses:
+        '200':
+          description: Docs metadata
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    service: { type: string }
+                    openapiUrl: { type: string }
+
+  /agents:
+    get:
+      tags: [agents]
+      summary: List agents
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Agents list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Agent'
+    post:
+      tags: [agents]
+      summary: Create agent
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AgentCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Agent'
+
+  /shipments:
+    get:
+      tags: [shipments]
+      summary: List shipments
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: projectId
+          in: query
+          schema: { type: string, format: uuid }
+      responses:
+        '200':
+          description: Shipments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Shipment'
+    post:
+      tags: [shipments]
+      summary: Create shipment (emit shipment.created)
+      security:
+        - bearerAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ShipmentCreate'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Shipment'
+
+  /billing/summary:
+    get:
+      tags: [billing]
+      summary: Get billing summary for tenant
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Billing summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingSummary'
+
+components:
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+      example:
+        error: "BadRequest"
+        message: "Missing required field 'name'"
+
+    UUID:
+      type: string
+      format: uuid
+
+    Pagination:
+      type: object
+      properties:
+        limit: { type: integer }
+        offset: { type: integer }
+        total: { type: integer }
+
+    Tenant:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        slug: { type: string }
+        name: { type: string }
+        plan: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    User:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        email: { type: string, format: email }
+        username: { type: string }
+        display_name: { type: string }
+        avatar_url: { type: string }
+        bio: { type: string }
+        role: { type: string }
+        github_id: { type: string, nullable: true }
+        wallet_address: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Session:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        user_id: { $ref: '#/components/schemas/UUID' }
+        refresh_token_hash: { type: string }
+        expires_at: { type: string, format: date-time }
+        user_agent: { type: string }
+        ip: { type: string, format: ipv4 }
+
+    ApiKey:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        user_id: { $ref: '#/components/schemas/UUID' }
+        name: { type: string }
+        prefix: { type: string }
+        scopes:
+          type: array
+          items: { type: string }
+        last_used_at: { type: string, format: date-time }
+        revoked_at: { type: string, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    ApiKeyCreateResponse:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        prefix: { type: string }
+        secretPlaintext: { type: string }
+
+    AuthSignup:
+      type: object
+      properties:
+        email: { type: string }
+        username: { type: string }
+        tenantSlug: { type: string }
+      required: [email]
+
+    AuthTokenResponse:
+      type: object
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        user:
+          $ref: '#/components/schemas/User'
+        tenant:
+          $ref: '#/components/schemas/Tenant'
+
+    Project:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        owner_id: { $ref: '#/components/schemas/UUID' }
+        name: { type: string }
+        slug: { type: string }
+        description: { type: string }
+        visibility: { type: string, enum: [private, team, public] }
+        default_branch: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ProjectCreate:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        visibility: { type: string, enum: [private, team, public] }
+
+    ProjectUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        visibility: { type: string }
+
+    PaginatedProjects:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+        total: { type: integer }
+
+    File:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        project_id: { $ref: '#/components/schemas/UUID' }
+        path: { type: string }
+        content: { type: string, nullable: true }
+        language: { type: string, nullable: true }
+        version: { type: integer }
+        is_directory: { type: boolean }
+        parent_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    FileCreate:
+      type: object
+      required: [path]
+      properties:
+        path: { type: string }
+        content: { type: string }
+        language: { type: string }
+        isDirectory: { type: boolean }
+        parentId: { $ref: '#/components/schemas/UUID' }
+
+    FileUpdate:
+      type: object
+      properties:
+        path: { type: string }
+        content: { type: string }
+        language: { type: string }
+
+    FileSnapshot:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        file_id: { $ref: '#/components/schemas/UUID' }
+        version: { type: integer }
+        content: { type: string }
+        created_at: { type: string, format: date-time }
+        created_by: { $ref: '#/components/schemas/UUID' }
+
+    Preview:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        project_id: { $ref: '#/components/schemas/UUID' }
+        compiled_bundle_url: { type: string }
+        iframe_url: { type: string }
+        last_build_status: { type: string }
+        last_build_log: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    FrameTemplate:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        project_id: { $ref: '#/components/schemas/UUID' }
+        name: { type: string }
+        slug: { type: string, nullable: true }
+        description: { type: string }
+        category: { type: string }
+        current_version_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        farcaster_frame_id: { type: string, nullable: true }
+        is_public: { type: boolean }
+        price_wei: { type: string, nullable: true }
+        royalty_bps: { type: integer, nullable: true }
+        created_by: { $ref: '#/components/schemas/UUID' }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    FrameTemplateCreate:
+      type: object
+      required: [projectId, name, initialSchema]
+      properties:
+        projectId: { $ref: '#/components/schemas/UUID' }
+        name: { type: string }
+        description: { type: string }
+        category: { type: string }
+        initialSchema: { type: object }
+        isPublic: { type: boolean }
+        priceWei: { type: string }
+        royaltyBps: { type: integer }
+
+    FrameTemplateUpdate:
+      type: object
+      properties:
+        name: { type: string }
+        description: { type: string }
+        category: { type: string }
+        isPublic: { type: boolean }
+        priceWei: { type: string }
+        royaltyBps: { type: integer }
+
+    FrameTemplateVersion:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        template_id: { $ref: '#/components/schemas/UUID' }
+        version: { type: integer }
+        schema: { type: object }
+        status: { type: string }
+        change_summary: { type: string }
+        created_by: { $ref: '#/components/schemas/UUID' }
+        created_at: { type: string, format: date-time }
+
+    FrameTemplateVersionCreate:
+      type: object
+      required: [schema]
+      properties:
+        schema: { type: object }
+        changeSummary: { type: string }
+
+    FrameTimeline:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        template_id: { $ref: '#/components/schemas/UUID' }
+        version_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        event_type: { type: string }
+        metadata: { type: object }
+        created_at: { type: string, format: date-time }
+        created_by: { $ref: '#/components/schemas/UUID' }
+
+    Agent:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        name: { type: string }
+        description: { type: string }
+        type: { type: string }
+        config: { type: object }
+        is_active: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    AgentCreate:
+      type: object
+      required: [name, type]
+      properties:
+        name: { type: string }
+        description: { type: string }
+        type: { type: string }
+        config: { type: object }
+
+    Shipment:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        project_id: { $ref: '#/components/schemas/UUID' }
+        agent_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        status: { type: string }
+        target_env: { type: string }
+        payload: { type: object }
+        result: { type: object }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ShipmentCreate:
+      type: object
+      required: [projectId, targetEnv]
+      properties:
+        projectId: { $ref: '#/components/schemas/UUID' }
+        agentId: { $ref: '#/components/schemas/UUID' }
+        targetEnv: { type: string }
+        payload: { type: object }
+
+    AiJob:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        project_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        entity_type: { type: string, nullable: true }
+        entity_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        job_type: { type: string }
+        input_hash: { type: string, nullable: true }
+        output_hash: { type: string, nullable: true }
+        model_id: { type: string, nullable: true }
+        prompt_version: { type: string, nullable: true }
+        confidence_score: { type: number, nullable: true }
+        status: { type: string, enum: [pending, running, completed, failed, cancelled] }
+        input: { type: object }
+        output: { type: object, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        attempts: { type: integer }
+        last_error: { type: string, nullable: true }
+
+    AiJobCreate:
+      type: object
+      required: [jobType, input]
+      properties:
+        jobType: { type: string }
+        projectId: { $ref: '#/components/schemas/UUID' }
+        entityType: { type: string }
+        entityId: { $ref: '#/components/schemas/UUID' }
+        input: { type: object }
+        modelId: { type: string }
+        promptVersion: { type: string }
+      example:
+        jobType: "generate_frame"
+        input:
+          prompt: "Create a promotional Farcaster frame for a summer drop"
+
+    MarketListing:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        template_id: { $ref: '#/components/schemas/UUID' }
+        seller_id: { $ref: '#/components/schemas/UUID' }
+        price_wei: { type: string }
+        status: { type: string, enum: [active, sold, cancelled] }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    MarketListingCreate:
+      type: object
+      required: [templateId, priceWei]
+      properties:
+        templateId: { $ref: '#/components/schemas/UUID' }
+        priceWei: { type: string }
+
+    Quest:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        slug: { type: string }
+        title: { type: string }
+        description: { type: string }
+        type: { type: string }
+        criteria: { type: object }
+        reward_points: { type: integer }
+        start_at: { type: string, format: date-time, nullable: true }
+        end_at: { type: string, format: date-time, nullable: true }
+        created_at: { type: string, format: date-time }
+
+    Achievement:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        slug: { type: string }
+        title: { type: string }
+        description: { type: string }
+        icon: { type: string }
+        criteria: { type: object }
+        created_at: { type: string, format: date-time }
+
+    LeaderboardEntry:
+      type: object
+      properties:
+        id: { type: integer }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        user_id: { $ref: '#/components/schemas/UUID' }
+        score: { type: integer }
+        period: { type: string, enum: [daily, weekly, all_time] }
+        period_start: { type: string, format: date-time }
+        period_end: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Follow:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        follower_id: { $ref: '#/components/schemas/UUID' }
+        followed_user_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        followed_project_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        created_at: { type: string, format: date-time }
+
+    Like:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        user_id: { $ref: '#/components/schemas/UUID' }
+        project_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        frame_template_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        created_at: { type: string, format: date-time }
+
+    Wallet:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        user_id: { $ref: '#/components/schemas/UUID' }
+        address: { type: string }
+        chain: { type: string }
+        created_at: { type: string, format: date-time }
+
+    Subscription:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        provider: { type: string }
+        provider_customer_id: { type: string }
+        provider_subscription_id: { type: string }
+        plan: { type: string }
+        status: { type: string }
+        current_period_end: { type: string, format: date-time }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    Invoice:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        provider_invoice_id: { type: string }
+        amount_cents: { type: integer }
+        currency: { type: string }
+        status: { type: string }
+        issued_at: { type: string, format: date-time }
+        paid_at: { type: string, format: date-time, nullable: true }
+
+    AuditLog:
+      type: object
+      properties:
+        id: { type: integer }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        user_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        action: { type: string }
+        entity_type: { type: string }
+        entity_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        metadata: { type: object }
+        ip: { type: string, format: ipv4, nullable: true }
+        created_at: { type: string, format: date-time }
+        immutable_seq: { type: integer }
+
+    ProtocolToken:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        symbol: { type: string }
+        chain_id: { type: integer }
+        contract_address: { type: string }
+        decimals: { type: integer }
+        created_at: { type: string, format: date-time }
+
+    ProtocolFee:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        fee_type: { type: string }
+        bps: { type: integer }
+        max_bps: { type: integer }
+        updated_by: { $ref: '#/components/schemas/UUID' }
+        updated_at: { type: string, format: date-time }
+
+    ProtocolMetricsSnapshot:
+      type: object
+      properties:
+        id: { type: integer }
+        tenant_id: { $ref: '#/components/schemas/UUID', nullable: true }
+        timestamp: { type: string, format: date-time }
+        tvl_usd: { type: number }
+        volume_24h_usd: { type: number }
+        active_users_24h: { type: integer }
+        frames_active: { type: integer }
+        mints_24h: { type: integer }
+
+    SystemHealthCheck:
+      type: object
+      properties:
+        id: { type: integer }
+        timestamp: { type: string, format: date-time }
+        component: { type: string }
+        status: { type: string, enum: [healthy, degraded, down] }
+        latency_ms: { type: integer }
+        metadata: { type: object }
+
+    FeedItem:
+      type: object
+      properties:
+        id: { $ref: '#/components/schemas/UUID' }
+        tenant_id: { $ref: '#/components/schemas/UUID' }
+        type: { type: string }
+        payload: { type: object }
+        created_at: { type: string, format: date-time }
+
+    AnalyticsOverview:
+      type: object
+      properties:
+        views_24h: { type: integer }
+        mints_24h: { type: integer }
+        revenue_24h_usd: { type: number }
+        active_users_24h: { type: integer }
+        frames_active: { type: integer }
+
+    PaginatedFrameTemplates:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/FrameTemplate'
+        total: { type: integer }
+
+examples:
+  AiJobCreateExample:
+    value:
+      jobType: "generate_frame"
+      projectId: "00000000-0000-0000-0000-000000000000"
+      input:
+        prompt: "Design a Farcaster frame for a drop, include title, subtitle, CTA and image placeholders"
+  AiJobResponseExample:
+    value:
+      id: "11111111-1111-1111-1111-111111111111"
+      job_type: "generate_frame"
+      status: "completed"
+      input:
+        prompt: "Design a Farcaster frame for a drop"
+      output:
+        schema:
+          title: "Summer Drop"
+          subtitle: "Limited Edition"
+          cta: "Mint Now"
+          elements:
+            - type: "image"
+              url: "ipfs://..."
+      created_at: "2026-01-13T12:00:00Z"
+      updated_at: "2026-01-13T12:00:10Z"
+
+# End of file
