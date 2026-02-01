@@ -46,7 +46,7 @@ jobs:
       - name: Clean dependencies (lightweight)
         run: |
           pnpm store prune
-          find . -name "node_modules" -type d -prune -exec du -sh {} \; || true
+          echo "Cleaned pnpm store"
 
       - name: Build SDK
         run: pnpm --filter @castquest/sdk build

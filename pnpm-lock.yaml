@@ -370,7 +370,7 @@ importers:
         version: 3.2.0(encoding@0.1.13)
     devDependencies:
       '@types/node':
-        specifier: ^20.0.0
+        specifier: ^20.10.0
         version: 20.10.6
       rimraf:
         specifier: ^3.0.2
