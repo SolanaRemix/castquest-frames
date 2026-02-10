@@ -83,7 +83,7 @@ describe('MediaService', () => {
         }),
       });
       
-      (db.select as any) = selectMock;
+      vi.mocked(db.select).mockReturnValue(selectMock() as any);
 
       const result = await mediaService.search('sunset');
 
@@ -104,7 +104,7 @@ describe('MediaService', () => {
         }),
       });
       
-      (db.select as any) = selectMock;
+      vi.mocked(db.select).mockReturnValue(selectMock() as any);
 
       const result = await mediaService.search('nonexistent');
 
@@ -140,7 +140,7 @@ describe('MediaService', () => {
         }),
       });
       
-      (db.select as any) = selectMock;
+      vi.mocked(db.select).mockReturnValue(selectMock() as any);
 
       const result = await mediaService.getById('media_001');
 
@@ -155,7 +155,7 @@ describe('MediaService', () => {
         }),
       });
       
-      (db.select as any) = selectMock;
+      vi.mocked(db.select).mockReturnValue(selectMock() as any);
 
       const result = await mediaService.getById('nonexistent');
 
@@ -218,7 +218,7 @@ describe('MediaService', () => {
         }),
       });
       
-      (db.select as any) = selectMock;
+      vi.mocked(db.select).mockReturnValue(selectMock() as any);
 
       const result = await mediaService.getByOwner('0x1234567890123456789012345678901234567890');
 
