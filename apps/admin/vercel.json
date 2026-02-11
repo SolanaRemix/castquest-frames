@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapis.vercel.sh/vercel.json",
+  "buildCommand": "cd ../.. && pnpm install && pnpm build",
+  "outputDirectory": ".next",
+  "framework": "nextjs",
+  "installCommand": "pnpm install",
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet ."
+}
