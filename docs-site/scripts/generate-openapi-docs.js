@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
-const path = require('path');
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 /**
  * Generates API documentation from OpenAPI spec
@@ -106,8 +110,8 @@ async function generateOpenApiDocs() {
 }
 
 // Only run if called directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   generateOpenApiDocs();
 }
 
-module.exports = { generateOpenApiDocs };
+export { generateOpenApiDocs };
