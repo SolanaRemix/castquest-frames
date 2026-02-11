@@ -190,8 +190,12 @@ cmd_health() {
   local checks_passed=0
   local checks_failed=0
   
-  # Ensure dependencies are installed
-  ensure_pnpm_install
+  # Ensure dependencies are installed (redirect stdout to stderr in JSON mode)
+  if [ "$output_format" = "--json" ]; then
+    ensure_pnpm_install >&2
+  else
+    ensure_pnpm_install
+  fi
 
   # 1. Validate package.json files
   log "1. Validating package.json files..."
@@ -282,7 +286,7 @@ cmd_health() {
     checks_passed=$((checks_passed + 1))
   else
     warn "✗ Found broken symlinks"
-    echo "$broken_links"
+    echo "$broken_links" >&2
     checks_failed=$((checks_failed + 1))
   fi
 
