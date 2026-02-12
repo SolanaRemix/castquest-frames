@@ -167,6 +167,33 @@ bash scripts/repair-dependencies.sh
 
 📖 **Full Documentation:** See [docs/DEPENDENCY-HEALTH.md](./docs/DEPENDENCY-HEALTH.md) for detailed health monitoring guide.
 
+## 🚀 Deployment
+
+CastQuest Frames is configured for production deployment to Vercel with optimized monorepo support.
+
+### Quick Deploy to Vercel
+
+The web app (`apps/web`) is production-ready with pre-configured settings:
+
+```bash
+# Connect to Vercel (one-time setup)
+vercel login
+vercel link
+
+# Deploy to production
+vercel --prod
+```
+
+### Configuration
+
+- **Framework**: Next.js with App Router
+- **Build Command**: `pnpm --filter @castquest/web build`
+- **Install Command**: `pnpm install --frozen-lockfile`
+- **Node.js Runtime**: 20.x (specified in `.nvmrc`)
+- **Package Manager**: pnpm 9.0.0
+
+📖 **Full Deployment Guide:** See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed instructions, environment variables, troubleshooting, and more.
+
 ## 💸 Sponsors & Partners
 
 Site: https://castquest.xyz (placeholder)
