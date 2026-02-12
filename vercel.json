@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm --filter @castquest/web build",
+  "devCommand": "pnpm --filter @castquest/web dev",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "framework": "nextjs",
+  "functions": {
+    "apps/web/app/api/**/*.ts": {
+      "runtime": "nodejs20.x"
+    },
+    "apps/web/app/api/**/*.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
+  "outputDirectory": "apps/web/.next"
+}
