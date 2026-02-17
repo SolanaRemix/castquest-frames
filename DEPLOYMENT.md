@@ -268,7 +268,7 @@ This is a pnpm workspace monorepo. Key points:
 
 - **Documentation**: See `/docs` folder
 - **Issues**: GitHub Issues
-- **Discord**: [Join our Discord](https://discord.gg/castquest)
+- **Community**: Check repository for community links
 
 ## Next Steps
 
