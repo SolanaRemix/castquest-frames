@@ -55,15 +55,47 @@ vercel
 
 ### Environment Variables
 
-Configure environment variables in Vercel Dashboard or via CLI:
+The web app requires several environment variables for full functionality. See `apps/web/.env.example` for a complete template with descriptions.
 
+#### Required Variables
+
+- `CASTQUEST_API_KEY` - API key for internal service authentication
+- `ADMIN_API_TOKEN` - Token for administrative operations
+
+#### Optional Variables
+
+- `NEXT_PUBLIC_PRIVY_APP_ID` - Privy authentication app ID
+- `DATABASE_URL` - PostgreSQL connection string
+- `NEXT_PUBLIC_API_URL` - Public API URL for client-side requests
+
+#### Setting Up Environment Variables
+
+**For Local Development:**
 ```bash
-# Set environment variable
-vercel env add DATABASE_URL
+# Copy the example file
+cp apps/web/.env.example apps/web/.env.local
+
+# Edit with your values
+nano apps/web/.env.local
+```
+
+**For Vercel Deployment:**
+```bash
+# Set environment variables via CLI
+vercel env add CASTQUEST_API_KEY
+vercel env add ADMIN_API_TOKEN
+
+# Or configure in Vercel Dashboard:
+# Project Settings → Environment Variables
 
 # Pull environment variables for local development
-vercel env pull .env.local
+vercel env pull apps/web/.env.local
 ```
+
+**Important Notes:**
+- Variables prefixed with `NEXT_PUBLIC_` are exposed to the browser
+- Keep sensitive keys (API tokens, database URLs) as server-side only
+- Use different values for development, preview, and production environments
 
 ### Monorepo Considerations
 
