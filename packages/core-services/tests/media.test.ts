@@ -43,16 +43,22 @@ describe('MediaService', () => {
         },
       ];
 
-      vi.mocked(db.query.mediaMetadata.findMany).mockResolvedValue(mockMedia as any);
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockReturnValue({
+              limit: vi.fn().mockReturnValue({
+                offset: vi.fn().mockResolvedValue(mockMedia),
+              }),
+            }),
+          }),
+        }),
+      } as any);
 
-      const result = await mediaService.searchMedia({
-        search: 'sunset',
-        limit: 20,
-        offset: 0,
-      });
+      const result = await mediaService.search('sunset', 20, 0);
 
-      expect(result.media).toHaveLength(1);
-      expect(result.media[0].name).toBe('Epic Sunset');
+      expect(result).toHaveLength(1);
+      expect(result[0].name).toBe('Epic Sunset');
     });
 
     it('should filter by media type', async () => {
@@ -65,16 +71,26 @@ describe('MediaService', () => {
         },
       ];
 
-      vi.mocked(db.query.mediaMetadata.findMany).mockResolvedValue(mockMedia as any);
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockReturnValue({
+              limit: vi.fn().mockReturnValue({
+                offset: vi.fn().mockResolvedValue(mockMedia),
+              }),
+            }),
+          }),
+        }),
+      } as any);
 
-      const result = await mediaService.searchMedia({
+      const result = await mediaService.list({
         mediaType: 'video',
         limit: 20,
         offset: 0,
       });
 
-      expect(result.media).toHaveLength(1);
-      expect(result.media[0].mediaType).toBe('video');
+      expect(result).toHaveLength(1);
+      expect(result[0].mediaType).toBe('video');
     });
   });
 
@@ -89,18 +105,26 @@ describe('MediaService', () => {
         status: 'active',
       };
 
-      vi.mocked(db.query.mediaMetadata.findFirst).mockResolvedValue(mockMedia as any);
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([mockMedia]),
+        }),
+      } as any);
 
-      const result = await mediaService.getMediaById('media_001');
+      const result = await mediaService.getById('media_001');
 
       expect(result).toBeDefined();
       expect(result?.name).toBe('Epic Sunset');
     });
 
     it('should return null for non-existent media', async () => {
-      vi.mocked(db.query.mediaMetadata.findFirst).mockResolvedValue(null);
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockResolvedValue([]),
+        }),
+      } as any);
 
-      const result = await mediaService.getMediaById('nonexistent');
+      const result = await mediaService.getById('nonexistent');
 
       expect(result).toBeNull();
     });
@@ -121,9 +145,19 @@ describe('MediaService', () => {
         },
       ];
 
-      vi.mocked(db.query.mediaMetadata.findMany).mockResolvedValue(mockMedia as any);
+      vi.mocked(db.select).mockReturnValue({
+        from: vi.fn().mockReturnValue({
+          where: vi.fn().mockReturnValue({
+            orderBy: vi.fn().mockReturnValue({
+              limit: vi.fn().mockReturnValue({
+                offset: vi.fn().mockResolvedValue(mockMedia),
+              }),
+            }),
+          }),
+        }),
+      } as any);
 
-      const result = await mediaService.getMediaByOwner('0x1234567890123456789012345678901234567890');
+      const result = await mediaService.getByOwner('0x1234567890123456789012345678901234567890');
 
       expect(result).toHaveLength(2);
     });
