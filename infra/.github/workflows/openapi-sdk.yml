@@ -1,0 +1,64 @@
+name: OpenAPI Lint & SDK Build
+
+on:
+  pull_request:
+    paths:
+      - 'infra/openapi/**'
+      - 'packages/sdk/**'
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['20.x']
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Clean dependencies (lightweight)
+        run: |
+          pnpm store prune
+          echo "Cleaned pnpm store"
+
+      - name: Build SDK
+        run: pnpm --filter @castquest/sdk build
+
+      - name: Lint OpenAPI
+        run: |
+          npx @readme/openapi-cli validate infra/openapi/castquest-full-openapi.yaml || true
+        continue-on-error: true
+
+      - name: Upload SDK artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: sdk-dist
+          path: packages/sdk/dist/

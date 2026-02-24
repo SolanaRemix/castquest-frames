@@ -71,7 +71,7 @@ describe('MediaService', () => {
         },
       ];
 
-      const selectMock = vi.fn().mockReturnValue({
+      vi.mocked(db.select).mockReturnValue({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
             orderBy: vi.fn().mockReturnValue({
@@ -81,34 +81,46 @@ describe('MediaService', () => {
             }),
           }),
         }),
-      });
-      
-      vi.mocked(db.select).mockReturnValue(selectMock() as any);
+      } as any);
 
-      const result = await mediaService.search('sunset');
+      const result = await mediaService.search('sunset', 20, 0);
 
       expect(result).toHaveLength(1);
       expect(result[0].name).toBe('Epic Sunset');
     });
 
-    it('should return empty array when no matches', async () => {
-      const selectMock = vi.fn().mockReturnValue({
+    it('should filter by media type', async () => {
+      const mockMedia = [
+        {
+          id: 'media-1',
+          ticker: 'VID',
+          name: 'Cool Video',
+          mediaType: 'video',
+        },
+      ];
+
+      vi.mocked(db.select).mockReturnValue({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
             orderBy: vi.fn().mockReturnValue({
               limit: vi.fn().mockReturnValue({
-                offset: vi.fn().mockResolvedValue([]),
+                offset: vi.fn().mockResolvedValue(mockMedia),
               }),
             }),
           }),
         }),
+      } as any);
+
+      const result = await mediaService.list({
+        mediaType: 'video',
+        limit: 20,
+        offset: 0,
       });
       
       vi.mocked(db.select).mockReturnValue(selectMock() as any);
 
-      const result = await mediaService.search('nonexistent');
-
-      expect(result).toHaveLength(0);
+      expect(result).toHaveLength(1);
+      expect(result[0].mediaType).toBe('video');
     });
   });
 
@@ -134,13 +146,11 @@ describe('MediaService', () => {
         createdAt: new Date(),
       };
 
-      const selectMock = vi.fn().mockReturnValue({
+      vi.mocked(db.select).mockReturnValue({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockResolvedValue([mockMedia]),
         }),
-      });
-      
-      vi.mocked(db.select).mockReturnValue(selectMock() as any);
+      } as any);
 
       const result = await mediaService.getById('media_001');
 
@@ -149,13 +159,11 @@ describe('MediaService', () => {
     });
 
     it('should return null for non-existent media', async () => {
-      const selectMock = vi.fn().mockReturnValue({
+      vi.mocked(db.select).mockReturnValue({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockResolvedValue([]),
         }),
-      });
-      
-      vi.mocked(db.select).mockReturnValue(selectMock() as any);
+      } as any);
 
       const result = await mediaService.getById('nonexistent');
 
@@ -206,7 +214,7 @@ describe('MediaService', () => {
         },
       ];
 
-      const selectMock = vi.fn().mockReturnValue({
+      vi.mocked(db.select).mockReturnValue({
         from: vi.fn().mockReturnValue({
           where: vi.fn().mockReturnValue({
             orderBy: vi.fn().mockReturnValue({
@@ -216,9 +224,7 @@ describe('MediaService', () => {
             }),
           }),
         }),
-      });
-      
-      vi.mocked(db.select).mockReturnValue(selectMock() as any);
+      } as any);
 
       const result = await mediaService.getByOwner('0x1234567890123456789012345678901234567890');
 

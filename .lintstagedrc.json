@@ -1,5 +1,7 @@
 {
   "*.{ts,tsx}": [],
   "*.{json,md}": [],
-  "package.json": []
+  "package.json": [
+    "npx npm-package-json-lint"
+  ]
 }
