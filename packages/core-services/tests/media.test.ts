@@ -116,8 +116,6 @@ describe('MediaService', () => {
         limit: 20,
         offset: 0,
       });
-      
-      vi.mocked(db.select).mockReturnValue(selectMock() as any);
 
       expect(result).toHaveLength(1);
       expect(result[0].mediaType).toBe('video');
