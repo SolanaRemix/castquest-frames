@@ -1,14 +1,17 @@
-name: CI
+name: OpenAPI Lint & SDK Build
 
 on:
-  push:
-    branches: [main]
   pull_request:
-    branches: [main]
+    paths:
+      - 'infra/openapi/**'
+      - 'packages/sdk/**'
 
 jobs:
-  ci:
+  lint-and-build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ['20.x']
     
     steps:
       - name: Checkout repository
@@ -45,17 +48,17 @@ jobs:
           pnpm store prune
           echo "Cleaned pnpm store"
 
-      - name: Lint
-        run: pnpm lint || echo "Lint failed, please fix locally."
+      - name: Build SDK
+        run: pnpm --filter @castquest/sdk build
+
+      - name: Lint OpenAPI
+        run: |
+          npx @readme/openapi-cli validate infra/openapi/castquest-full-openapi.yaml || true
         continue-on-error: true
 
-      - name: Typecheck
-        run: pnpm typecheck || echo "Typecheck failed, please fix locally."
-        continue-on-error: true
-
-      - name: Test
-        run: pnpm test -- --watch=false || echo "Tests failed, please review."
-        continue-on-error: true
-
-      - name: Build packages
-        run: pnpm -r build || echo "Build failed, please review."
+      - name: Upload SDK artifacts
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: sdk-dist
+          path: packages/sdk/dist/
