@@ -1,10 +1,14 @@
 node_modules
 dist
 .env
-.env.*
 .env.local
+.env.*.local
 .DS_Store
 coverage
+
+# Lock files (pnpm only)
+package-lock.json
+yarn.lock
 
 # Next.js build artifacts
 .next
@@ -25,6 +29,9 @@ web-build/
 *.tmp
 *.log
 *.backup
+*.old
+*.swp
+*~
 
 # TypeScript build info
 *.tsbuildinfo
@@ -43,6 +50,6 @@ AUDIT-REPORT.md
 supabase/.branches
 supabase/.temp
 
-# Supabase
-supabase/.branches
-supabase/.temp
+# Vercel
+.vercel
+

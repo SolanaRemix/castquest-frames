@@ -11,6 +11,11 @@ vi.mock('../src/lib/db', () => ({
       },
     },
     insert: vi.fn(),
+    update: vi.fn().mockReturnValue({
+      set: vi.fn().mockReturnValue({
+        where: vi.fn().mockResolvedValue(undefined),
+      }),
+    }),
     delete: vi.fn(),
   },
 }));
@@ -36,9 +41,10 @@ describe('WalletService', () => {
         id: 'wallet-123',
         userId: 'user-123',
         address: '0x1234567890123456789012345678901234567890',
-        type: 'eoa',
+        type: 'eoa' as const,
         label: 'Main Wallet',
         isPrimary: false,
+        lastUsedAt: new Date(),
         createdAt: new Date(),
       };
 
@@ -63,7 +69,12 @@ describe('WalletService', () => {
     it('should throw error if wallet already exists', async () => {
       vi.mocked(db.query.wallets.findFirst).mockResolvedValue({
         id: 'existing-wallet',
+        userId: 'user-123',
         address: '0x1234567890123456789012345678901234567890',
+        type: 'eoa',
+        isPrimary: false,
+        lastUsedAt: new Date(),
+        createdAt: new Date(),
       } as any);
 
       await expect(
@@ -77,22 +88,26 @@ describe('WalletService', () => {
     });
   });
 
-  describe('getUserWallets', () => {
+  describe('getWalletsByUserId', () => {
     it('should return all wallets for a user', async () => {
       const mockWallets = [
         {
           id: 'wallet-1',
           userId: 'user-123',
           address: '0x1111111111111111111111111111111111111111',
-          type: 'eoa',
+          type: 'eoa' as const,
           isPrimary: true,
+          lastUsedAt: new Date(),
+          createdAt: new Date(),
         },
         {
           id: 'wallet-2',
           userId: 'user-123',
           address: '0x2222222222222222222222222222222222222222',
-          type: 'smart_wallet',
+          type: 'smart_wallet' as const,
           isPrimary: false,
+          lastUsedAt: new Date(),
+          createdAt: new Date(),
         },
       ];
 
