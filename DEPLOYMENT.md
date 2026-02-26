@@ -14,7 +14,7 @@ The CastQuest Frames web application is configured for seamless deployment to Ve
 The root `vercel.json` provides production-ready configuration:
 
 - **Framework**: Next.js (automatically detected)
-- **Build Command**: `pnpm --filter @castquest/web build`
+- **Build Command**: `pnpm build`
 - **Install Command**: `pnpm install --frozen-lockfile` (ensures reproducible builds)
 - **Node.js Runtime**: 20.x (matches `.nvmrc` specification)
 - **Package Manager**: pnpm 9.0.0 (specified in `package.json`)
