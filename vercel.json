@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm --filter @castquest/web build",
+  "buildCommand": "pnpm --filter @castquest/web... build",
   "devCommand": "pnpm --filter @castquest/web dev",
   "installCommand": "pnpm install --frozen-lockfile",
   "framework": "nextjs",
