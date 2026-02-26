@@ -187,7 +187,7 @@ vercel --prod
 ### Configuration
 
 - **Framework**: Next.js with App Router
-- **Build Command**: `pnpm --filter @castquest/web build`
+- **Build Command**: `pnpm -r build`
 - **Install Command**: `pnpm install --frozen-lockfile`
 - **Node.js Runtime**: 20.x (specified in `.nvmrc`)
 - **Package Manager**: pnpm 9.0.0
