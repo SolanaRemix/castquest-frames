@@ -1,158 +1,286 @@
-# Deployment Guide
+# CastQuest Deployment Guide for Vercel
 
-## Vercel Deployment (apps/web)
+This guide covers deploying the CastQuest monorepo to Vercel with Node.js 22+.
 
-The CastQuest Frames web application is configured for seamless deployment to Vercel with production-ready settings.
+## Prerequisites
 
-### Prerequisites
+- Node.js 22.11.0 or higher
+- pnpm 9.0.0 or higher
+- Vercel account
+- Database (PostgreSQL) hosted and accessible
+- Required API keys (see Environment Variables below)
 
-- Vercel account with GitHub integration
-- Repository connected to Vercel
+## Project Structure
 
-### Configuration
-
-The root `vercel.json` provides production-ready configuration:
-
-- **Framework**: Next.js (automatically detected)
-- **Build Command**: `pnpm build`
-- **Install Command**: `pnpm install --frozen-lockfile` (ensures reproducible builds)
-- **Node.js Runtime**: 20.x (matches `.nvmrc` specification)
-- **Package Manager**: pnpm 9.0.0 (specified in `package.json`)
-
-### Deployment Steps
-
-#### Option 1: Automatic Deployment (Recommended)
-
-1. **Connect Repository to Vercel**
-   ```bash
-   # Install Vercel CLI (optional)
-   npm i -g vercel
-   
-   # Login and link project
-   vercel login
-   vercel link
-   ```
-
-2. **Configure Project Settings**
-   - Vercel will auto-detect the `vercel.json` configuration
-   - Root directory: `./` (monorepo root)
-   - Framework: Next.js (auto-detected)
-   - Build command: Pre-configured in `vercel.json`
-
-3. **Deploy**
-   - Push to `main` branch for production deployment
-   - Push to other branches for preview deployments
-
-#### Option 2: Manual Deployment via CLI
-
-```bash
-# Production deployment
-vercel --prod
-
-# Preview deployment
-vercel
+```
+castquest-frames/
+├── apps/
+│   ├── web/          # Main web application (deployed to Vercel)
+│   └── admin/        # Admin dashboard
+├── packages/
+│   ├── core-services/ # Backend services
+│   ├── neo-ux-core/   # UI components
+│   ├── sdk/           # TypeScript SDK
+│   └── contracts/     # Smart contracts (Foundry)
+└── vercel.json        # Vercel deployment configuration
 ```
 
-### Environment Variables
+## Quick Start
 
-The web app requires several environment variables for full functionality. See `apps/web/.env.example` for a complete template with descriptions.
+### 1. Fork and Clone
 
-#### Required Variables
-
-- `CASTQUEST_API_KEY` - API key for internal service authentication
-- `ADMIN_API_TOKEN` - Token for administrative operations
-
-#### Optional Variables
-
-- `NEXT_PUBLIC_PRIVY_APP_ID` - Privy authentication app ID
-- `DATABASE_URL` - PostgreSQL connection string
-- `NEXT_PUBLIC_API_URL` - Public API URL for client-side requests
-
-#### Setting Up Environment Variables
-
-**For Local Development:**
 ```bash
-# Copy the example file
-cp apps/web/.env.example apps/web/.env.local
-
-# Edit with your values
-nano apps/web/.env.local
+git clone https://github.com/your-username/castquest-frames.git
+cd castquest-frames
 ```
 
-**For Vercel Deployment:**
-```bash
-# Set environment variables via CLI
-vercel env add CASTQUEST_API_KEY
-vercel env add ADMIN_API_TOKEN
-
-# Or configure in Vercel Dashboard:
-# Project Settings → Environment Variables
-
-# Pull environment variables for local development
-vercel env pull apps/web/.env.local
-```
-
-**Important Notes:**
-- Variables prefixed with `NEXT_PUBLIC_` are exposed to the browser
-- Keep sensitive keys (API tokens, database URLs) as server-side only
-- Use different values for development, preview, and production environments
-
-### Monorepo Considerations
-
-- The configuration builds the entire monorepo workspace
-- Workspace dependencies (`@castquest/neo-ux-core`, `@castquest/core-services`) are automatically included
-- The build process uses pnpm workspaces for dependency resolution
-
-### Build Optimization
-
-The Vercel configuration includes:
-
-- **Frozen Lockfile**: Ensures consistent dependency versions
-- **Workspace Filtering**: Only builds necessary packages
-- **Node.js 20.x**: Latest LTS for optimal performance
-- **API Routes**: Configured for serverless functions with nodejs20.x runtime
-
-### Troubleshooting
-
-#### Build Failures
+### 2. Install Dependencies
 
 ```bash
-# Test build locally
-pnpm --filter @castquest/web build
+# Install pnpm if you haven't already
+npm install -g pnpm@9.0.0
 
-# Check for dependency issues
+# Install project dependencies
 pnpm install --frozen-lockfile
 ```
 
-#### Environment Issues
+### 3. Configure Environment Variables
 
-- Ensure Node.js 20+ is used (check `.nvmrc`)
-- Verify pnpm version matches `packageManager` in `package.json`
-- Check that all workspace dependencies build successfully
+Copy the example files and update with your values:
 
-#### API Route Issues
+```bash
+# Web app
+cp apps/web/.env.example apps/web/.env.local
 
-- API routes are located in `apps/web/app/api/`
-- Functions automatically use nodejs20.x runtime
-- Ensure serverless function size limits are not exceeded
+# Admin app
+cp apps/admin/.env.example apps/admin/.env.local
 
-### Monitoring
+# Core services
+cp packages/core-services/.env.example packages/core-services/.env
+```
+
+See the [Environment Variables](#environment-variables) section below for required values.
+
+### 4. Build Locally (Test)
+
+```bash
+# Build all packages
+pnpm run build
+
+# Run tests
+pnpm test
+
+# Type check
+pnpm typecheck
+```
+
+### 5. Deploy to Vercel
+
+#### Option A: Using Vercel CLI
+
+```bash
+# Install Vercel CLI
+npm install -g vercel
+
+# Login to Vercel
+vercel login
+
+# Deploy
+vercel --prod
+```
+
+#### Option B: Using Vercel Dashboard
+
+1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
+2. Click "Add New Project"
+3. Import your GitHub repository
+4. Vercel will automatically detect the `vercel.json` configuration
+5. Add environment variables in the dashboard
+6. Click "Deploy"
+
+## Environment Variables
+
+### Required Variables
+
+All apps require these core variables. See `.env.example` files for complete lists.
+
+#### Web App (`apps/web/.env.local`)
+
+```bash
+# Application
+NODE_ENV=production
+NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
+
+# Authentication
+NEXT_PUBLIC_PRIVY_APP_ID=your_privy_app_id
+
+# Database
+DATABASE_URL=postgresql://user:password@host:port/database
+
+# API
+NEXT_PUBLIC_API_URL=https://api.your-domain.com
+
+# Blockchain
+NEXT_PUBLIC_CHAIN_ID=8453
+NEXT_PUBLIC_RPC_URL=https://mainnet.base.org
+```
+
+#### Admin App (`apps/admin/.env.local`)
+
+```bash
+# All of the above, plus:
+ADMIN_ADDRESSES=0xYourAdminWallet,0xAnotherAdminWallet
+```
+
+#### Core Services (`packages/core-services/.env`)
+
+```bash
+# Server
+PORT=4000
+DATABASE_URL=postgresql://user:password@host:port/database
+
+# Authentication
+JWT_SECRET=your_strong_random_jwt_secret
+API_KEY=your_api_key
+
+# Blockchain
+RPC_URL=https://mainnet.base.org
+PRIVATE_KEY=your_private_key_for_contract_interactions
+```
+
+### Optional Variables
+
+- **OPENAI_API_KEY**: For AI-powered features (Smart Brain)
+- **PINATA_API_KEY**: For IPFS storage
+- **SENTRY_DSN**: For error monitoring
+- **SMTP_***: For email notifications
+
+## Vercel Configuration
+
+The `vercel.json` file in the root configures:
+
+- **Runtime**: Node.js 22.x
+- **Build Command**: Builds the web app
+- **Install Command**: Uses pnpm with frozen lockfile
+- **Output Directory**: Next.js build output
+- **Function Timeout**: 30 seconds max
+
+### Custom Domains
+
+To add a custom domain:
+
+1. Go to your Vercel project settings
+2. Navigate to "Domains"
+3. Add your custom domain
+4. Update DNS records as instructed
+5. Update environment variables with new domain
+
+## Database Setup
+
+### PostgreSQL Database
+
+You'll need a PostgreSQL database. Recommended providers:
+
+- **Vercel Postgres** (built-in)
+- **Supabase** (free tier available)
+- **Railway** (easy setup)
+- **Neon** (serverless Postgres)
+
+#### Create Database
+
+```sql
+CREATE DATABASE castquest;
+```
+
+#### Run Migrations
+
+```bash
+# From packages/core-services
+pnpm db:migrate
+```
+
+## Testing Deployment
 
 After deployment:
 
-1. Check build logs in Vercel Dashboard
-2. Monitor function execution and errors
-3. Review analytics for performance insights
+1. **Health Check**: Visit `https://your-domain.vercel.app/api/health`
+2. **Admin Dashboard**: Visit `https://your-domain.vercel.app/admin`
+3. **Run Tests**: Check Vercel deployment logs for test results
 
-### Other Deployments
+## Troubleshooting
 
-This configuration is specifically for `apps/web`. Other applications:
+### Build Fails
 
-- `apps/admin`: Deploy separately if needed (not covered by this config)
-- `apps/mobile`: Deploy via appropriate mobile app distribution channels
+- Check Node.js version is 22+ (see `.nvmrc`)
+- Ensure all workspace dependencies are built in order
+- Check for missing environment variables
+- Review Vercel build logs
 
-### Additional Resources
+### Runtime Errors
 
-- [Vercel Documentation](https://vercel.com/docs)
-- [Next.js Deployment](https://nextjs.org/docs/deployment)
-- [Vercel CLI Reference](https://vercel.com/docs/cli)
+- Verify DATABASE_URL is accessible from Vercel
+- Check API keys are correctly set
+- Review Vercel function logs
+- Ensure CORS is configured properly
+
+### Performance Issues
+
+- Enable Vercel caching
+- Use Vercel Edge Functions for API routes
+- Optimize database queries
+- Configure Redis for caching (optional)
+
+## Monorepo Considerations
+
+This is a pnpm workspace monorepo. Key points:
+
+1. **Build Order**: Core packages must build before apps
+2. **Dependencies**: Use `workspace:*` for internal packages
+3. **Deployment**: Only `apps/web` is deployed to Vercel
+4. **Shared Code**: Changes to `packages/*` affect all apps
+
+## Security
+
+### Secrets Management
+
+- Never commit `.env` files
+- Use Vercel Environment Variables for secrets
+- Rotate keys regularly
+- Use different keys for staging/production
+
+### API Security
+
+- Enable rate limiting (configured in core-services)
+- Use CORS properly
+- Validate all inputs
+- Use HTTPS only
+
+## Monitoring
+
+### Recommended Tools
+
+- **Vercel Analytics**: Built-in analytics
+- **Sentry**: Error tracking
+- **LogRocket**: Session replay
+- **Datadog**: APM and logs
+
+## Support
+
+- **Documentation**: See `/docs` folder
+- **Issues**: GitHub Issues
+- **Community**: Check repository for community links
+
+## Next Steps
+
+After successful deployment:
+
+1. Configure custom domain
+2. Set up monitoring
+3. Configure CI/CD pipeline
+4. Set up staging environment
+5. Configure backup strategy
+6. Test all features end-to-end
+
+---
+
+**Note**: Update all placeholder values in `.env` files before deployment. The provided examples use placeholder values that must be replaced with actual credentials.
